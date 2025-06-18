@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>广州智造音响设备有限公司</title>
+    <!-- 注释都由AI生成，请甄别错误 -->
+     <!-- 部分函数由Ai生成 -->
+    <style>
+        :root {
+            --card-bg: #ffffff;
+            --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            --card-radius: 12px;
+            --spacing-large: 24px;
+            --spacing-medium: 16px;
+            --spacing-small: 8px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--spacing-large);
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-large);
+        }
+
+        .panel {
+            display: flex;
+            gap: var(--spacing-large);
+            flex-wrap: wrap;
+            height: calc(100vh - 100px);
+            /* 减去标题和边距的高度 */
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--card-radius);
+            box-shadow: var(--card-shadow);
+            padding: var(--spacing-medium);
+            flex: 1;
+            min-width: 300px;
+            max-width: 100%;
+            overflow: hidden;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .serial-card {
+            min-width: 400px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .eq-card {
+            min-width: 400px;
+            overflow-y: auto;
+            /* 允许EQ卡片内容滚动 */
+        }
+
+        .control-panel {
+            display: flex;
+            gap: var(--spacing-small);
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: var(--spacing-medium);
+            justify-content: center;
+            /* 添加居中对齐 */
+        }
+
+        .control-panel button {
+            min-width: 200px;
+            /* 设置最小宽度 */
+            padding: 10px 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .control-panel button:hover {
+            background-color: #2980b9;
+        }
+
+        .control-panel button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        select,
+        input {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-family: 'Consolas', monospace;
+            resize: vertical;
+            background-color: #f8f9fa;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            background-color: #ecf0f1;
+            margin-bottom: var(--spacing-medium);
+            font-size: 14px;
+        }
+
+        .receive-area-container {
+            width: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            /* 重要：允许容器在flex布局中收缩 */
+        }
+
+        textarea#receiveArea {
+            width: 100%;
+            flex: 1;
+            min-height: 100px;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-family: 'Consolas', monospace;
+            resize: none;
+            /* 禁止手动调整大小 */
+            background-color: #f8f9fa;
+            box-sizing: border-box;
+            overflow-y: auto;
+            word-wrap: break-word;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .send-panel {
+            display: flex;
+            gap: var(--spacing-small);
+            margin-top: var(--spacing-medium);
+        }
+
+        .send-panel input {
+            flex-grow: 1;
+        }
+
+        .hex-checkbox {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-small);
+            font-size: 14px;
+        }
+
+        .eq-container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-end;
+            height: 280px;
+            margin: var(--spacing-medium) 0;
+            overflow-x: auto;
+            /* 允许水平滚动 */
+            padding-bottom: 10px;
+            /* 为滚动条留出空间 */
+        }
+
+        .eq-band-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spacing-small);
+            height: 100%;
+        }
+
+        .eq-band {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            position: relative;
+        }
+
+        .eq-slider {
+            -webkit-appearance: slider-vertical;
+            width: 50px;
+            height: 220px;
+            padding: 0 5px;
+            margin: 10px 0;
+        }
+
+        .eq-value {
+            width: 60px;
+            text-align: center;
+            padding: 6px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .eq-label {
+            font-weight: bold;
+            margin-top: var(--spacing-small);
+            font-size: 14px;
+            text-align: center;
+            color: #2c3e50;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 4px 8px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .eq-presets {
+            display: flex;
+            gap: var(--spacing-small);
+            margin-top: var(--spacing-medium);
+            flex-wrap: wrap;
+            justify-content: center;
+            /* 添加居中对齐 */
+        }
+
+        .eq-presets button {
+            background-color: #9b59b6;
+            min-width: 100px;
+            /* 设置最小宽度 */
+            border-radius: 20px;
+            /* 添加圆角 */
+            padding: 8px 16px;
+            /* 调整内边距 */
+            font-weight: 500;
+            /* 字体加粗 */
+            transition: all 0.3s ease;
+            /* 添加过渡效果 */
+            border: none;
+            /* 移除边框 */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            /* 添加轻微阴影 */
+        }
+
+        .eq-presets button:hover {
+            background-color: #8e44ad;
+            transform: translateY(-2px);
+            /* 悬停时轻微上浮 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            /* 悬停时阴影加深 */
+        }
+
+        .eq-presets button:active {
+            transform: translateY(0);
+            /* 点击时恢复位置 */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            /* 点击时恢复阴影 */
+        }
+
+        .db-scale {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 240px;
+            padding-right: 10px;
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+
+        .db-mark {
+            display: flex;
+            align-items: center;
+            height: 48px;
+        }
+
+        @media (max-width: 768px) {
+            .panel {
+                flex-direction: column;
+            }
+
+            .card {
+                min-width: 100%;
+            }
+
+            .eq-container {
+                height: auto;
+                flex-wrap: wrap;
+                justify-content: center;
+                overflow-x: visible;
+            }
+
+            .eq-slider {
+                -webkit-appearance: slider-horizontal;
+                width: 100%;
+                height: 40px;
+                margin: 10px 0;
+            }
+
+            .eq-band-container {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .db-scale {
+                display: none;
+            }
+
+            .control-panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-panel button,
+            .control-panel select,
+            .control-panel input {
+                width: 100%;
+                margin-bottom: var(--spacing-small);
+            }
+
+            .eq-presets {
+                flex-direction: column;
+            }
+
+            .eq-presets button {
+                width: 100%;
+                margin-bottom: var(--spacing-small);
+            }
+        }
+
+        /* 平板设备 */
+        @media (max-width: 1024px) {
+            .panel {
+                flex-direction: column;
+            }
+
+            .card {
+                min-width: 100%;
+            }
+        }
+
+        /* 手机设备 */
+        @media (max-width: 480px) {
+            body {
+                padding: var(--spacing-small);
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            .container {
+                height: calc(100vh - 60px);
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .panel {
+                height: auto;
+                min-height: 100%;
+            }
+
+            .card {
+                padding: var(--spacing-small);
+                min-height: auto;
+            }
+
+            h1 {
+                font-size: 1.5em;
+                position: sticky;
+                top: 0;
+                background: #f5f7fa;
+                z-index: 100;
+                padding: 10px 0;
+                margin: 0;
+            }
+
+            h2 {
+                font-size: 1.2em;
+            }
+
+            .eq-container {
+                height: 300px;
+                overflow-x: auto;
+                padding-bottom: 20px;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .eq-slider {
+                height: 200px;
+                width: 5px;
+                margin: 0 5px;
+            }
+
+            .eq-band-container {
+                min-width: 60px;
+            }
+
+            .eq-value {
+                width: 50px;
+                font-size: 12px;
+                padding: 4px;
+            }
+
+            .eq-label {
+                font-size: 12px;
+                padding: 2px 4px;
+            }
+
+            .footer {
+                position: sticky;
+                bottom: 0;
+                background: #f5f7fa;
+                z-index: 100;
+                margin: 0;
+            }
+        }
+
+        /* 优化触摸设备上的滑块体验 */
+        @media (hover: none) {
+            .eq-slider {
+                height: 44px;
+                /* 增加触摸区域 */
+            }
+
+            button {
+                min-height: 44px;
+                /* 符合触摸设备最小点击区域 */
+            }
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-top: 0;
+            text-align: center;
+            margin-bottom: var(--spacing-large);
+        }
+
+        /* 修改波特率相关样式 */
+        .baud-rate-container {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        #baudRate,
+        #customBaudRate {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            background-color: white;
+        }
+
+        #baudRate {
+            cursor: pointer;
+        }
+
+        #customBaudRate {
+            width: 120px;
+        }
+
+        #baudRate:disabled,
+        #customBaudRate:disabled {
+            background-color: #f5f5f5;
+            cursor: not-allowed;
+        }
+
+        /* 添加新的样式 */
+        .pa-control,
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .pa-slider,
+        .volume-slider {
+            flex: 1;
+            height: 20px;
+        }
+
+        .pa-value,
+        .volume-value {
+            width: 60px;
+            text-align: center;
+            padding: 6px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        #readAllBtn {
+            width: 100%;
+            background-color: #27ae60;
+        }
+
+        #readAllBtn:hover {
+            background-color: #219a52;
+        }
+
+
+        /* 针对所有浏览器的滑块样式优化 */
+        input[type="range"].pa-slider,
+        input[type="range"].volume-slider {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            outline: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* PA和音量滑块轨道渐变，左侧有色 */
+        input[type="range"].pa-slider::-webkit-slider-runnable-track,
+        input[type="range"].volume-slider::-webkit-slider-runnable-track {
+            height: 8px;
+            background: linear-gradient(to right,
+                    #3498db 0%,
+                    #3498db calc(var(--percent, 0) * 1%),
+                    #eee calc(var(--percent, 0) * 1%),
+                    #eee 100%);
+            border-radius: 4px;
+        }
+
+        input[type="range"].pa-slider::-moz-range-progress,
+        input[type="range"].volume-slider::-moz-range-progress {
+            background-color: #3498db;
+            height: 8px;
+        }
+
+        input[type="range"].pa-slider::-moz-range-track,
+        input[type="range"].volume-slider::-moz-range-track {
+            background-color: #eee;
+            height: 8px;
+        }
+
+        input[type="range"].pa-slider::-ms-fill-lower,
+        input[type="range"].volume-slider::-ms-fill-lower {
+            background: #3498db;
+        }
+
+        input[type="range"].pa-slider::-ms-fill-upper,
+        input[type="range"].volume-slider::-ms-fill-upper {
+            background: #eee;
+        }
+
+        /* 滑块按钮 */
+        input[type="range"].pa-slider::-webkit-slider-thumb,
+        input[type="range"].volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #888;
+            border-radius: 50%;
+            cursor: pointer;
+            margin-top: -6px;
+            /* 使thumb垂直居中 */
+        }
+
+        input[type="range"].pa-slider::-moz-range-thumb,
+        input[type="range"].volume-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #888;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        input[type="range"].pa-slider::-ms-thumb,
+        input[type="range"].volume-slider::-ms-thumb {
+            width: 20px;
+            height: 20px;
+            background: #888;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* 去除IE的默认样式 */
+        input[type="range"].pa-slider:focus,
+        input[type="range"].volume-slider:focus {
+            outline: none;
+        }
+
+        input[type="range"].pa-slider::-ms-tooltip,
+        input[type="range"].volume-slider::-ms-tooltip {
+            display: none;
+        }
+
+        .pa-control button {
+            min-width: 80px;
+            /* 设置最小宽度 */
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .pa-control button:hover {
+            background-color: #2980b9;
+        }
+
+        .pa-control button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .volume-control button {
+            min-width: 80px;
+            /* 设置最小宽度 */
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .volume-control button:hover {
+            background-color: #2980b9;
+        }
+
+        .volume-control button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        /* 页尾样式 */
+        .footer {
+            margin-top: var(--spacing-large);
+            padding: var(--spacing-medium);
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #eee;
+        }
+
+        .footer p {
+            margin: 5px 0;
+        }
+
+        .footer a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>串口EQ均衡器</h1>
+    <div class="container">
+        <div class="panel">
+
+            <div class="card eq-card">
+                <h2>均衡器设置</h2>
+            
+                <div class="eq-container" id="eqContainer">
+                    <div class="db-scale">
+                        <div class="db-mark">+12dB</div>
+                        <div class="db-mark">+6dB</div>
+                        <div class="db-mark">0dB</div>
+                        <div class="db-mark">-6dB</div>
+                        <div class="db-mark">-12dB</div>
+                    </div>
+                </div>
+            
+                <div class="eq-presets">
+                </div>
+            
+                <div class="control-panel" style="margin-top: var(--spacing-medium);">
+                    <button id="sendEqBtn" disabled>发送EQ设置 (命令: 0x01)</button>
+                    <button id="resetEqBtn">重置</button>
+                </div>
+            
+                <div class="control-panel" style="margin-top: var(--spacing-medium);">
+                    <div class="pa-control">
+                        <label for="paValue">功率PA设置 (命令: 0x02):</label>
+                        <input type="range" id="paValue" min="0" max="64" value="0" step="1" class="pa-slider">
+                        <input type="number" id="paValueInput" min="0" max="64" value="0" step="1" class="pa-value">
+                        <button id="sendPaBtn" disabled>发送</button>
+                    </div>
+                </div>
+            
+                <div class="control-panel" style="margin-top: var(--spacing-medium);">
+                    <div class="volume-control">
+                        <label for="defaultVolume">开机默认音量 (命令: 0x03):</label>
+                        <input type="range" id="defaultVolume" min="0" max="15" value="8" step="1" class="volume-slider">
+                        <input type="number" id="defaultVolumeInput" min="0" max="15" value="8" step="1" class="volume-value">
+                        <button id="sendVolumeBtn" disabled>发送</button>
+                    </div>
+                </div>
+            
+                <div class="control-panel" style="margin-top: var(--spacing-medium);">
+                    <button id="readAllBtn" disabled>读取全部信息 (命令: 0x80)</button>
+                </div>
+            </div>
+            <div class="card serial-card">
+                <h2>串口通信</h2>
+                <div class="control-panel">
+                    <button id="connectBtn">连接串口</button>
+                    <button id="disconnectBtn" disabled>断开连接</button>
+                    <div class="baud-rate-container">
+                        <select id="baudRate">
+                            <option value="9600">9600</option>
+                            <option value="19200">19200</option>
+                            <option value="38400">38400</option>
+                            <option value="57600">57600</option>
+                            <option value="115200">115200</option>
+                            <option value="custom">自定义</option>
+                        </select>
+                        <input type="number" id="customBaudRate" placeholder="自定义波特率" style="display: none;" min="1200"
+                            max="4000000">
+                    </div>
+                    <div class="hex-checkbox">
+                        <input type="checkbox" id="hexDisplay" checked>
+                        <label for="hexDisplay">十六进制显示</label>
+                        <input type="checkbox" id="showRawData">
+                        <label for="showRawData">显示原始数据</label>
+                    </div>
+                    <button id="clearReceiveBtn">清空接收区</button>
+                </div>
+
+                <div class="status" id="status">未连接</div>
+
+                <textarea id="receiveArea" readonly placeholder="接收的数据将显示在这里..."></textarea>
+            </div>
+
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>© 2024 广州智造音响设备有限公司 版权所有</p>
+        <p>技术支持：<a href="mailto:support@example.com">support@example.com</a></p>
+        <p>版本：1.0.0</p>
+    </footer>
+    <!-- <script src="./app.js"></script> -->
+     <script src="https://hanami-web-serial.vercel.app/app.js"></script>
+</body>
+<!-- <script src="https://your-project-name.vercel.app/js/app.min.js"></script> -->
+</html>

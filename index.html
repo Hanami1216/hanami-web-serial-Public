@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>广州智造音响设备有限公司 - 串口EQ均衡器</title>
+    <meta name="description" content="广州智造音响设备有限公司专业音响设备Web控制界面，支持串口通信和实时EQ调节">
+    <meta name="keywords" content="音响设备,均衡器,串口通信,EQ调节,广州智造">
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 2rem;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 2.5rem;
+            font-weight: 300;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .feature {
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .feature h3 {
+            color: #2c3e50;
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+        }
+        
+        .feature p {
+            color: #7f8c8d;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 500;
+            font-size: 1.1rem;
+            margin: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+        
+        .note {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 2rem 0;
+            color: #856404;
+        }
+        
+        .footer {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #ecf0f1;
+            color: #95a5a6;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 1rem;
+                padding: 2rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 串口EQ均衡器</h1>
+        <p class="subtitle">广州智造音响设备有限公司</p>
+        
+        <div class="features">
+            <div class="feature">
+                <h3>🎛️ 专业均衡器</h3>
+                <p>10频段EQ调节，±12dB范围，支持多种音效预设</p>
+            </div>
+            <div class="feature">
+                <h3>🔌 串口通信</h3>
+                <p>基于Web Serial API，直接在浏览器中控制设备</p>
+            </div>
+            <div class="feature">
+                <h3>📱 响应式设计</h3>
+                <p>完美适配桌面端和移动端，随时随地控制设备</p>
+            </div>
+            <div class="feature">
+                <h3>⚡ 实时控制</h3>
+                <p>功率PA调节、音量控制、参数读取一应俱全</p>
+            </div>
+        </div>
+        
+        <div class="note">
+            <strong>⚠️ 浏览器要求：</strong> 请使用Chrome 89+或Edge 89+浏览器，并确保在HTTPS环境下使用。
+        </div>
+        
+        <a href="./verticalslider-card-v1.0.0.html" class="cta-button">
+            🚀 启动应用
+        </a>
+        
+        <div class="footer">
+            <p>© 2024 广州智造音响设备有限公司 | 专业音响设备解决方案</p>
+            <p>技术支持：Web Serial API | 部署平台：Vercel</p>
+        </div>
+    </div>
+    
+    <script>
+        // 检查浏览器兼容性
+        if (!('serial' in navigator)) {
+            const note = document.querySelector('.note');
+            note.innerHTML = '<strong>❌ 浏览器不兼容：</strong> 您的浏览器不支持Web Serial API。请使用Chrome 89+或Edge 89+浏览器。';
+            note.style.backgroundColor = '#f8d7da';
+            note.style.borderColor = '#f5c6cb';
+            note.style.color = '#721c24';
+        }
+        
+        // 添加点击统计（可选）
+        document.querySelector('.cta-button').addEventListener('click', function() {
+            console.log('用户启动了EQ均衡器应用');
+        });
+    </script>
+</body>
+</html>
