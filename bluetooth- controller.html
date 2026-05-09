@@ -15,6 +15,7 @@
             margin: 0;
             padding: 16px;
             color: #1e293b;
+            overflow-x: hidden;
         }
         .container {
             max-width: 700px;
@@ -381,9 +382,138 @@
             color: #7e8aa2;
             margin-top: 24px;
         }
-        @media (max-width: 500px) {
-            .container { padding: 16px; }
-            button { padding: 8px 16px; }
+        @media (max-width: 640px) {
+            body {
+                padding: 8px;
+            }
+            .container {
+                padding: 12px 10px;
+                border-radius: 16px;
+                max-width: 100%;
+            }
+            h1 {
+                font-size: 1.25rem;
+                gap: 6px;
+            }
+            .badge {
+                font-size: 0.65rem;
+                padding: 3px 8px;
+            }
+            .sub {
+                font-size: 0.75rem;
+                margin-bottom: 14px;
+                padding-left: 10px;
+            }
+            .btn-group {
+                flex-direction: column;
+                gap: 8px;
+                margin: 14px 0 12px;
+            }
+            button {
+                width: 100%;
+                box-sizing: border-box;
+                padding: 12px 16px;
+                font-size: 0.9rem;
+            }
+            .info-card {
+                padding: 10px 12px;
+                border-radius: 14px;
+                margin: 12px 0;
+            }
+            .info-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 2px;
+                padding: 6px 0;
+            }
+            .info-row .value {
+                max-width: 100%;
+                text-align: left;
+                font-size: 0.8rem;
+            }
+            .info-row .label {
+                font-size: 0.8rem;
+            }
+            .tab-nav {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .tab-btn {
+                font-size: 0.8rem;
+                padding: 10px 14px;
+                white-space: nowrap;
+                flex: 0 0 auto;
+            }
+            .tab-panel {
+                padding: 12px 0 0 0;
+            }
+            .control-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                padding: 8px 0;
+            }
+            .control-label {
+                font-size: 0.8rem;
+            }
+            .control-value {
+                text-align: left;
+                min-width: auto;
+            }
+            input[type="range"] {
+                width: 100%;
+            }
+            .hue-slider {
+                width: 100%;
+            }
+            .color-preview {
+                align-self: flex-start;
+            }
+            .send-row {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .send-row input[type="text"] {
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .send-row button {
+                width: 100%;
+            }
+            .block-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+            .color-block {
+                font-size: 0.7rem;
+                border-radius: 8px;
+            }
+            .time-input-row {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .time-input-row input[type="number"] {
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .log-area {
+                max-height: 200px;
+                font-size: 0.7rem;
+                padding: 10px;
+                border-radius: 12px;
+                margin-top: 14px;
+            }
+            .log-title {
+                font-size: 0.75rem;
+                margin-top: 4px;
+            }
+            footer {
+                font-size: 0.65rem;
+                margin-top: 16px;
+            }
+            hr {
+                margin: 12px 0;
+            }
         }
     </style>
 </head>

@@ -16,6 +16,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow-x: hidden;
         }
         
         .container {
@@ -103,18 +104,66 @@
             font-size: 0.9rem;
         }
         
-        @media (max-width: 768px) {
+        @media (max-width: 640px) {
+            body {
+                padding: 0.5rem;
+                align-items: flex-start;
+                padding-top: 1.5rem;
+            }
+
             .container {
-                margin: 1rem;
-                padding: 2rem;
+                margin: 0.5rem;
+                padding: 1.5rem 1.25rem;
+                border-radius: 16px;
+                max-width: 100%;
             }
-            
+
             h1 {
-                font-size: 2rem;
+                font-size: 1.5rem;
             }
-            
+
+            .subtitle {
+                font-size: 1rem;
+                margin-bottom: 1.5rem;
+            }
+
             .features {
                 grid-template-columns: 1fr;
+                gap: 1rem;
+                margin: 1.5rem 0;
+            }
+
+            .feature {
+                padding: 1rem;
+            }
+
+            .feature h3 {
+                font-size: 1rem;
+            }
+
+            .feature p {
+                font-size: 0.85rem;
+            }
+
+            .cta-button {
+                display: block;
+                width: 100%;
+                box-sizing: border-box;
+                padding: 0.85rem 1.5rem;
+                font-size: 1rem;
+                margin: 0.5rem 0;
+            }
+
+            .note {
+                padding: 0.75rem;
+                margin: 1.5rem 0;
+                font-size: 0.85rem;
+            }
+
+            .footer {
+                font-size: 0.8rem;
+                margin-top: 1.5rem;
+                padding-top: 1.5rem;
             }
         }
     </style>
