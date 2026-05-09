@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Android BLE 蓝牙测试助手 | Web Bluetooth Demo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: system-ui, 'Segoe UI', 'Roboto', 'Noto Sans', sans-serif;
+            background: #f5f7fb;
+            margin: 0;
+            padding: 16px;
+            color: #1e293b;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            overflow: hidden;
+            padding: 20px 18px 28px;
+        }
+        h1 {
+            font-size: 1.65rem;
+            font-weight: 600;
+            margin: 0 0 6px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .badge {
+            font-size: 0.7rem;
+            background: #e6f0ff;
+            color: #1e6fdf;
+            padding: 4px 10px;
+            border-radius: 40px;
+            font-weight: normal;
+        }
+        .sub {
+            color: #5b6e8c;
+            font-size: 0.8rem;
+            margin-bottom: 20px;
+            border-left: 3px solid #3b82f6;
+            padding-left: 12px;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 20px 0 16px;
+        }
+        button {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #1e293b;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.02);
+            flex: 0 0 auto;
+        }
+        button.primary {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+            box-shadow: 0 2px 5px rgba(59,130,246,0.2);
+        }
+        button.primary:active { background: #2563eb; transform: scale(0.97);}
+        button.danger {
+            border-color: #fecaca;
+            color: #b91c1c;
+            background: #fff5f5;
+        }
+        button.danger:active { background: #fee2e2; }
+        button:active { transform: scale(0.97);}
+        button:disabled {
+            opacity: 0.5;
+            transform: none;
+            cursor: not-allowed;
+        }
+        .info-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 12px 16px;
+            margin: 16px 0;
+            border: 1px solid #e2e8f0;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2edf2;
+            font-size: 0.85rem;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .label {
+            font-weight: 600;
+            color: #475569;
+        }
+        .value {
+            color: #0f172a;
+            word-break: break-all;
+            max-width: 60%;
+            text-align: right;
+            font-family: monospace;
+        }
+        /* Tab 标签页样式 */
+        .tab-nav {
+            display: flex;
+            gap: 0;
+            margin-bottom: 0;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            padding: 10px 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #64748b;
+            border-radius: 0;
+            box-shadow: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .tab-btn.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+            background: transparent;
+        }
+        .tab-btn:active { transform: none; }
+        .tab-panel { display: none; padding: 16px 0 0 0; }
+        .tab-panel.active { display: block; }
+        /* 控件行 */
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .control-row:last-child { border-bottom: none; }
+        .control-label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #334155;
+        }
+        .control-value {
+            font-size: 0.8rem;
+            color: #64748b;
+            min-width: 40px;
+            text-align: right;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 120px;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(59,130,246,0.3);
+        }
+        /* 色相渐变条 */
+        .hue-slider {
+            -webkit-appearance: none;
+            width: 140px;
+            height: 8px;
+            border-radius: 4px;
+            outline: none;
+            background: linear-gradient(to right,
+                #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000
+            );
+        }
+        .hue-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #334155;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        }
+        .color-preview {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+        /* 发送行 */
+        .send-row {
+            display: flex;
+            gap: 8px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .send-row input[type="text"] {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            outline: none;
+        }
+        .send-row input[type="text"]:focus { border-color: #3b82f6; }
+        .send-row button {
+            flex: 0 0 auto;
+            padding: 8px 18px;
+            font-size: 0.85rem;
+            border-radius: 10px;
+        }
+        /* 方块矩阵 */
+        .block-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .color-block {
+            aspect-ratio: 1;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        .color-block.dimmed {
+            opacity: 0.4;
+            filter: grayscale(30%);
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 6px rgba(59,130,246,0.5), 0 0 20px rgba(59,130,246,0.2); }
+            50% { box-shadow: 0 0 14px rgba(59,130,246,0.7), 0 0 36px rgba(59,130,246,0.35); }
+        }
+        .color-block.selected {
+            border-color: #3b82f6;
+            animation: pulseGlow 1.8s ease-in-out infinite;
+            transform: scale(1.08);
+            opacity: 1;
+            filter: none;
+        }
+        .color-block:active { transform: scale(0.95); }
+        .color-block.selected:active { transform: scale(1.05); }
+        /* 开关 */
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+            display: inline-block;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #cbd5e1;
+            border-radius: 26px;
+            transition: 0.25s;
+        }
+        .toggle-slider::before {
+            content: "";
+            position: absolute;
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.25s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        .toggle-switch input:checked + .toggle-slider { background: #3b82f6; }
+        .toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); }
+        /* 时间常数行 */
+        .time-input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 0;
+        }
+        .time-input-row input[type="number"] {
+            width: 80px;
+            padding: 6px 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            outline: none;
+            text-align: center;
+        }
+        .time-input-row input[type="number"]:focus { border-color: #3b82f6; }
+        .time-input-row button {
+            flex: 0 0 auto;
+            padding: 6px 16px;
+            font-size: 0.8rem;
+            border-radius: 10px;
+        }
+        .log-area {
+            background: #0f172a;
+            color: #b9f2ff;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.75rem;
+            border-radius: 18px;
+            padding: 12px 14px;
+            margin-top: 20px;
+            max-height: 280px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.45;
+        }
+        .log-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-top: 8px;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #334155;
+        }
+        .clear-log {
+            background: none;
+            border: none;
+            font-size: 0.7rem;
+            color: #5b6e8c;
+            padding: 2px 8px;
+            box-shadow: none;
+            text-decoration: underline;
+        }
+        .status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 10px;
+            background: #94a3b8;
+            margin-right: 8px;
+        }
+        .status.connected {
+            background: #22c55e;
+            box-shadow: 0 0 4px #22c55e;
+        }
+        hr {
+            margin: 16px 0;
+            border: none;
+            border-top: 1px solid #e2e8f0;
+        }
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            color: #7e8aa2;
+            margin-top: 24px;
+        }
+        @media (max-width: 500px) {
+            .container { padding: 16px; }
+            button { padding: 8px 16px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>
+        📱 BLE 蓝牙调试器
+        <span class="badge">Web Bluetooth API</span>
+    </h1>
+    <div class="sub">
+        支持 Android Chrome / Edge · 扫描 BLE 设备 · 读取设备信息/电池电量
+    </div>
+
+    <div class="btn-group">
+        <button id="scanBtn" class="primary">🔍 扫描 & 连接设备</button>
+        <button id="disconnectBtn" disabled>🔌 断开连接</button>
+        <button id="readInfoBtn" disabled>📄 读取设备信息</button>
+    </div>
+
+    <div class="info-card">
+        <div class="info-row">
+            <span class="label">📡 蓝牙状态</span>
+            <span class="value" id="bleStatus">⚠️ 未初始化</span>
+        </div>
+        <div class="info-row">
+            <span class="label">🔗 连接设备</span>
+            <span class="value" id="deviceName">—</span>
+        </div>
+        <div class="info-row">
+            <span class="label">🆔 设备ID</span>
+            <span class="value" id="deviceId">—</span>
+        </div>
+        <div class="info-row">
+            <span class="label">⚡ 电池电量</span>
+            <span class="value" id="batteryLevel">—</span>
+        </div>
+        <div class="info-row">
+            <span class="label">🏭 制造商</span>
+            <span class="value" id="manufacturer">—</span>
+        </div>
+        <div class="info-row">
+            <span class="label">📦 服务数量</span>
+            <span class="value" id="serviceCount">—</span>
+        </div>
+    </div>
+
+    <!-- 控制卡片 -->
+    <div class="info-card">
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="text">文字</button>
+            <button class="tab-btn" data-tab="spectrum">频谱</button>
+            <button class="tab-btn" data-tab="light">灯光控制</button>
+        </div>
+
+        <!-- 文字面板 -->
+        <div class="tab-panel active" id="panel-text">
+            <div class="send-row">
+                <input type="text" id="textInput" placeholder="输入文字...">
+                <button id="textSendBtn" class="primary">发送</button>
+            </div>
+            <div class="control-row">
+                <span class="control-label">颜色</span>
+                <input type="range" class="hue-slider" id="textHue" min="0" max="360" value="0">
+                <span class="color-preview" id="textColorPreview" style="background: hsl(0,100%,50%);"></span>
+            </div>
+            <div class="control-row">
+                <span class="control-label">亮度</span>
+                <input type="range" id="textBrightness" min="0" max="100" value="80">
+                <span class="control-value" id="textBrightnessVal">80%</span>
+            </div>
+        </div>
+
+        <!-- 频谱面板 -->
+        <div class="tab-panel" id="panel-spectrum">
+            <div class="block-grid" id="spectrumGrid">
+                <!-- JS 动态生成 16 个方块 -->
+            </div>
+            <div class="control-row">
+                <span class="control-label">自动模式</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autoMode">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="time-input-row">
+                <span class="control-label">时间常数</span>
+                <input type="number" id="timeConstant" value="1.0" step="0.1" min="0.1" max="10">
+                <span style="font-size:0.8rem;color:#94a3b8;">秒</span>
+                <button id="timeConfirmBtn">确认</button>
+            </div>
+        </div>
+
+        <!-- 灯光控制面板 -->
+        <div class="tab-panel" id="panel-light">
+            <div class="send-row">
+                <input type="text" id="lightTextInput" placeholder="输入文字...">
+                <button id="lightTextSendBtn" class="primary">发送</button>
+            </div>
+            <div class="control-row">
+                <span class="control-label">颜色</span>
+                <input type="range" class="hue-slider" id="lightHue" min="0" max="360" value="0">
+                <span class="color-preview" id="lightColorPreview" style="background: hsl(0,100%,50%);"></span>
+            </div>
+            <div class="control-row">
+                <span class="control-label">亮度</span>
+                <input type="range" id="lightBrightness" min="0" max="100" value="80">
+                <span class="control-value" id="lightBrightnessVal">80%</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="log-title">
+        <span>📋 实时日志</span>
+        <button id="clearLogBtn" class="clear-log">清空</button>
+    </div>
+    <div class="log-area" id="logPanel">
+        [系统] 等待操作，点击「扫描 & 连接设备」<br>
+        [提示] 需要 Android 手机蓝牙已开启，并使用 Chrome 等支持 Web Bluetooth 的浏览器<br>
+        [安全] 请确保页面通过 HTTPS 或 localhost 访问 (非 file 协议)
+    </div>
+    <footer>
+        ⚡ 基于 Web Bluetooth API | 需要用户手势触发 | 测试 BLE (低功耗蓝牙) 设备
+    </footer>
+</div>
+
+<script>
+    (function(){
+        // DOM 元素
+        const scanBtn = document.getElementById('scanBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const readInfoBtn = document.getElementById('readInfoBtn');
+        const bleStatusSpan = document.getElementById('bleStatus');
+        const deviceNameSpan = document.getElementById('deviceName');
+        const deviceIdSpan = document.getElementById('deviceId');
+        const batteryLevelSpan = document.getElementById('batteryLevel');
+        const manufacturerSpan = document.getElementById('manufacturer');
+        const serviceCountSpan = document.getElementById('serviceCount');
+        const logPanel = document.getElementById('logPanel');
+        const clearLogBtn = document.getElementById('clearLogBtn');
+
+        // 全局蓝牙对象
+        let bluetoothDevice = null;      // 当前选中的设备
+        let gattServer = null;           // GATT 服务器实例
+        let isConnected = false;
+
+        // ---------- 辅助函数：日志 ----------
+        function addLog(message, isError = false) {
+            const logDiv = logPanel;
+            const timeStr = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+            const prefix = isError ? '❌' : '🔹';
+            const colorStyle = isError ? 'color: #ffaa99;' : '';
+            const logMsg = `[${timeStr}] ${prefix} ${message}`;
+            const logEntry = document.createElement('div');
+            logEntry.style.marginBottom = '4px';
+            logEntry.style.wordBreak = 'break-word';
+            if(isError) logEntry.style.color = '#ffb4a2';
+            logEntry.innerText = logMsg;
+            logPanel.appendChild(logEntry);
+            logPanel.scrollTop = logPanel.scrollHeight;
+            // 同时也输出到控制台便于调试
+            if(isError) console.error(message);
+            else console.log(message);
+        }
+
+        function clearLog() {
+            logPanel.innerHTML = '';
+            addLog('日志已清空，重新记录');
+        }
+
+        // 更新界面UI状态 (根据连接状态)
+        function updateUIState(connected) {
+            if(connected && gattServer && bluetoothDevice) {
+                disconnectBtn.disabled = false;
+                readInfoBtn.disabled = false;
+                scanBtn.disabled = false;   // 允许重新扫描，但会断开当前连接 (逻辑上建议先断开)
+                bleStatusSpan.innerHTML = '<span class="status connected"></span> 已连接';
+                if(bluetoothDevice.name) deviceNameSpan.innerText = bluetoothDevice.name;
+                else deviceNameSpan.innerText = bluetoothDevice.id || '未知设备';
+                deviceIdSpan.innerText = bluetoothDevice.id || '—';
+            } else {
+                disconnectBtn.disabled = true;
+                readInfoBtn.disabled = true;
+                bleStatusSpan.innerHTML = '<span class="status"></span> 未连接 / 断开';
+                if(!connected && !bluetoothDevice) {
+                    deviceNameSpan.innerText = '—';
+                    deviceIdSpan.innerText = '—';
+                }
+                // 不清除设备名称保留展示最后断开设备名（可选）
+            }
+        }
+
+        // 重置设备信息卡片（部分信息保留，连接新设备会覆盖）
+        function resetDeviceInfoCard() {
+            batteryLevelSpan.innerText = '—';
+            manufacturerSpan.innerText = '—';
+            serviceCountSpan.innerText = '—';
+        }
+
+        // 断开蓝牙连接
+        async function disconnectDevice() {
+            if(gattServer && gattServer.connected) {
+                try {
+                    addLog(`正在断开设备: ${bluetoothDevice?.name || bluetoothDevice?.id}`);
+                    await gattServer.disconnect();
+                    addLog(`已断开蓝牙连接`);
+                } catch(e) {
+                    addLog(`断开时出错: ${e.message}`, true);
+                }
+            }
+            if(bluetoothDevice) {
+                // 移除断开事件监听
+                if(bluetoothDevice.removeEventListener) {
+                    bluetoothDevice.removeEventListener('gattserverdisconnected', handleDisconnection);
+                }
+            }
+            gattServer = null;
+            isConnected = false;
+            bluetoothDevice = null;
+            updateUIState(false);
+            resetDeviceInfoCard();
+            deviceNameSpan.innerText = '—';
+            deviceIdSpan.innerText = '—';
+            addLog('设备对象已清除，可重新扫描');
+        }
+
+        // 处理意外断开事件
+        function handleDisconnection(event) {
+            addLog(`⚠️ 设备已断开连接 (意外或主动)`, true);
+            gattServer = null;
+            isConnected = false;
+            updateUIState(false);
+            resetDeviceInfoCard();
+            if(bluetoothDevice) {
+                addLog(`设备 ${bluetoothDevice.name || bluetoothDevice.id} 断开 GATT 服务器`);
+            }
+            bluetoothDevice = null;
+        }
+
+        // 读取设备信息服务(制造商名称等)
+        async function readDeviceInformation(server) {
+            try {
+                // 服务UUID: 设备信息服务 0x180A
+                const service = await server.getPrimaryService('device_information');
+                addLog(`找到设备信息服务 (0x180A)`);
+                
+                // 特征: 制造商名称字符串 0x2A29
+                const manufacturerChar = await service.getCharacteristic('manufacturer_name_string');
+                const manufacturerValue = await manufacturerChar.readValue();
+                const manufacturer = new TextDecoder('utf-8').decode(manufacturerValue);
+                manufacturerSpan.innerText = manufacturer || '未知';
+                addLog(`制造商: ${manufacturer}`);
+                
+                // 可选: 读取型号 0x2A24
+                try {
+                    const modelChar = await service.getCharacteristic('model_number_string');
+                    const modelValue = await modelChar.readValue();
+                    const model = new TextDecoder('utf-8').decode(modelValue);
+                    addLog(`型号: ${model}`);
+                } catch(e) { addLog(`未找到型号特征或读取失败: ${e.message}`, false); }
+                
+                // 序列号 0x2A25
+                try {
+                    const serialChar = await service.getCharacteristic('serial_number_string');
+                    const serialVal = await serialChar.readValue();
+                    const serial = new TextDecoder('utf-8').decode(serialVal);
+                    addLog(`序列号: ${serial}`);
+                } catch(e) { /* 非必须 */ }
+            } catch(error) {
+                addLog(`读取设备信息服务失败: ${error.message}`, true);
+                manufacturerSpan.innerText = '不支持/无权限';
+            }
+        }
+
+        // 读取电池电量
+        async function readBatteryLevel(server) {
+            try {
+                const batteryService = await server.getPrimaryService('battery_service');
+                addLog(`找到电池服务 (0x180F)`);
+                const batteryChar = await batteryService.getCharacteristic('battery_level');
+                const value = await batteryChar.readValue();
+                const batteryPercent = value.getUint8(0);
+                batteryLevelSpan.innerText = `${batteryPercent}%`;
+                addLog(`电池电量: ${batteryPercent}%`);
+                return batteryPercent;
+            } catch(e) {
+                addLog(`未找到电池服务或读取失败: ${e.message}`, false);
+                batteryLevelSpan.innerText = '不支持';
+                return null;
+            }
+        }
+
+        // 列举所有主要服务 (展示服务数量及UUID)
+        async function enumerateServices(server) {
+            try {
+                const services = await server.getPrimaryServices();
+                const serviceUuids = services.map(svc => svc.uuid);
+                serviceCountSpan.innerText = `${services.length} 个`;
+                addLog(`发现 ${services.length} 个主要服务: ${serviceUuids.join(', ')}`);
+                return services;
+            } catch(e) {
+                addLog(`枚举服务失败: ${e.message}`, true);
+                serviceCountSpan.innerText = '错误';
+                return [];
+            }
+        }
+
+        // 连接并初始化设备数据 (读取设备信息、电池、服务列表)
+        async function connectAndSetup(device) {
+            if(!device) {
+                addLog(`无效设备对象`, true);
+                return false;
+            }
+            try {
+                addLog(`正在连接设备: ${device.name || device.id} ...`);
+                // 建立GATT连接
+                const server = await device.gatt.connect();
+                gattServer = server;
+                isConnected = true;
+                bluetoothDevice = device;
+                
+                // 监听断开事件
+                device.addEventListener('gattserverdisconnected', handleDisconnection);
+                
+                updateUIState(true);
+                addLog(`✅ GATT 连接成功！`);
+                
+                // 1. 枚举服务并显示数量
+                await enumerateServices(server);
+                
+                // 2. 读取设备信息服务 (制造商等)
+                await readDeviceInformation(server);
+                
+                // 3. 读取电池电量 (如果支持)
+                await readBatteryLevel(server);
+                
+                addLog(`初始化数据读取完成，可通过「读取设备信息」按钮重新获取。`);
+                return true;
+            } catch (error) {
+                addLog(`连接或初始化失败: ${error.message}`, true);
+                // 连接失败后重置状态
+                if(device) device.removeEventListener('gattserverdisconnected', handleDisconnection);
+                gattServer = null;
+                isConnected = false;
+                bluetoothDevice = null;
+                updateUIState(false);
+                resetDeviceInfoCard();
+                return false;
+            }
+        }
+
+        // 扫描设备 + 连接（requestDevice）
+        async function scanAndConnect() {
+            // 先断开当前任何已连接设备
+            if(gattServer && gattServer.connected) {
+                addLog(`当前已有连接，先断开再重新扫描...`);
+                await disconnectDevice();
+                // 等待一点时间确保清理完成
+                await new Promise(r => setTimeout(r, 300));
+            }
+            
+            // 检测浏览器是否支持 Web Bluetooth
+            if (!navigator.bluetooth) {
+                addLog(`您的浏览器不支持 Web Bluetooth API。请使用 Android Chrome/Edge 等支持 BLE 的浏览器，并确保 HTTPS 环境。`, true);
+                bleStatusSpan.innerText = '❌ 不支持';
+                return;
+            }
+            
+            addLog(`正在请求蓝牙设备，请在弹出的系统选择器中选择目标BLE设备...`);
+            try {
+                // 使用 acceptAllDevices: true 以便扫描所有 BLE 设备, 但必须提供 optionalServices 数组告知需要访问哪些服务
+                // 为了能读取设备信息、电池服务等，这里预置常用服务 UUID
+                const optionalServicesList = [
+                    'device_information',      // 0x180A
+                    'battery_service',         // 0x180F
+                    'generic_access',          // 0x1800
+                    'generic_attribute'        // 0x1801
+                ];
+                // 也可以额外增加一些常见服务 (心率, 骑行等便于测试, 但非必须)
+                const device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: optionalServicesList
+                });
+                
+                addLog(`用户选择了设备: ${device.name || '无名称'} (ID: ${device.id})`);
+                deviceNameSpan.innerText = device.name || '未命名设备';
+                deviceIdSpan.innerText = device.id;
+                
+                // 连接并初始化读取特征
+                await connectAndSetup(device);
+            } catch (error) {
+                if (error.name === 'NotFoundError') {
+                    addLog(`没有找到设备或用户未选择任何设备`, true);
+                } else if (error.name === 'SecurityError') {
+                    addLog(`安全错误: 请确保网页使用 HTTPS 协议 (或者 localhost) 并且已开启蓝牙权限`, true);
+                } else if (error.name === 'NotAllowedError') {
+                    addLog(`用户拒绝了蓝牙权限请求`, true);
+                } else {
+                    addLog(`扫描/连接出错: ${error.message}`, true);
+                }
+                // 重置界面状态
+                if(bluetoothDevice === null) {
+                    deviceNameSpan.innerText = '—';
+                    deviceIdSpan.innerText = '—';
+                }
+                updateUIState(false);
+            }
+        }
+        
+        // 手动触发重新读取设备信息 + 电池 (无需重新连接)
+        async function refreshDeviceInfo() {
+            if (!gattServer || !gattServer.connected) {
+                addLog(`设备未连接，请先扫描连接设备`, true);
+                return;
+            }
+            if (!bluetoothDevice) {
+                addLog(`无效设备对象，请重新连接`, true);
+                return;
+            }
+            addLog(`手动刷新设备信息...`);
+            try {
+                // 重新读取制造商和电池等
+                await readDeviceInformation(gattServer);
+                await readBatteryLevel(gattServer);
+                // 可选刷新服务数量（也可重新枚举）
+                const services = await gattServer.getPrimaryServices();
+                serviceCountSpan.innerText = `${services.length} 个`;
+                addLog(`当前服务数量: ${services.length}`);
+            } catch (err) {
+                addLog(`刷新信息失败: ${err.message}`, true);
+            }
+        }
+        
+        // 检测初始蓝牙支持状态
+        function checkBluetoothSupport() {
+            if (!navigator.bluetooth) {
+                bleStatusSpan.innerText = '❌ 不支持 Web Bluetooth';
+                addLog(`⚠️ 当前浏览器不支持 Web Bluetooth API。请在 Android 设备上使用 Chrome 85+ / Edge 等浏览器并确保 HTTPS 环境。`, true);
+                scanBtn.disabled = false;  // 仍然可点但会报错
+            } else {
+                bleStatusSpan.innerText = '✅ 支持 (等待操作)';
+                addLog(`✅ Web Bluetooth API 可用，确保蓝牙已开启。`);
+                // 额外检测是否安全上下文
+                if (!window.isSecureContext) {
+                    addLog(`⚠️ 当前页面非安全上下文(非HTTPS/localhost)，蓝牙功能可能不可用！`, true);
+                    bleStatusSpan.innerText = '⚠️ 非安全上下文';
+                } else {
+                    addLog(`🔒 安全上下文验证通过`);
+                }
+            }
+        }
+        
+        // 绑定按钮事件
+        function bindEvents() {
+            scanBtn.addEventListener('click', async () => {
+                // 每次点击扫描都先确保断开逻辑
+                if(gattServer && gattServer.connected) {
+                    addLog(`检测到已有连接，自动断开后再扫描...`);
+                    await disconnectDevice();
+                }
+                await scanAndConnect();
+            });
+            
+            disconnectBtn.addEventListener('click', async () => {
+                await disconnectDevice();
+                addLog(`手动断开连接完成`);
+            });
+            
+            readInfoBtn.addEventListener('click', async () => {
+                if(!gattServer || !gattServer.connected) {
+                    addLog(`当前未连接任何设备，请先扫描连接`, true);
+                    return;
+                }
+                await refreshDeviceInfo();
+            });
+            
+            clearLogBtn.addEventListener('click', () => {
+                clearLog();
+            });
+        }
+
+        // 标签页切换 & 控件日志
+        function bindTabEvents() {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabPanels = document.querySelectorAll('.tab-panel');
+
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const target = btn.dataset.tab;
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    tabPanels.forEach(p => p.classList.remove('active'));
+                    document.getElementById(`panel-${target}`).classList.add('active');
+                });
+            });
+
+            // 辅助: Hue → HSL 字符串
+            function hueToHsl(h) {
+                return `hsl(${h},100%,50%)`;
+            }
+
+            // ===== 文字面板 =====
+            const textHue = document.getElementById('textHue');
+            const textColorPreview = document.getElementById('textColorPreview');
+            document.getElementById('textSendBtn').addEventListener('click', () => {
+                const input = document.getElementById('textInput');
+                const val = input.value.trim();
+                if (val) {
+                    addLog(`[文字] 发送: ${val}`);
+                    input.value = '';
+                }
+            });
+            textHue.addEventListener('input', function() {
+                const h = parseInt(this.value);
+                textColorPreview.style.background = hueToHsl(h);
+            });
+            textHue.addEventListener('change', function() {
+                addLog(`[文字] 颜色 (色相): ${this.value}°`);
+            });
+            document.getElementById('textBrightness').addEventListener('input', function() {
+                document.getElementById('textBrightnessVal').innerText = `${this.value}%`;
+            });
+            document.getElementById('textBrightness').addEventListener('change', function() {
+                addLog(`[文字] 亮度: ${this.value}%`);
+            });
+
+            // ===== 频谱面板 =====
+            const spectrumGrid = document.getElementById('spectrumGrid');
+            const blockColors = [
+                '#ef4444','#f97316','#eab308','#22c55e',
+                '#14b8a6','#06b6d4','#3b82f6','#6366f1',
+                '#a855f7','#ec4899','#f43f5e','#fb923c',
+                '#facc15','#4ade80','#2dd4bf','#8b5cf6'
+            ];
+            let selectedBlock = null;
+            const allBlocks = [];
+            blockColors.forEach((color, i) => {
+                const block = document.createElement('div');
+                block.className = 'color-block';
+                block.style.background = color;
+                block.dataset.index = i;
+                block.textContent = `灯效${i + 1}`;
+                block.addEventListener('click', () => {
+                    if (selectedBlock === block) return;
+                    if (selectedBlock) {
+                        selectedBlock.classList.remove('selected');
+                    }
+                    block.classList.add('selected');
+                    selectedBlock = block;
+                    allBlocks.forEach(b => {
+                        if (b !== block) b.classList.add('dimmed');
+                        else b.classList.remove('dimmed');
+                    });
+                    addLog(`[频谱] 选中灯效${i + 1} (${color})`);
+                });
+                spectrumGrid.appendChild(block);
+                allBlocks.push(block);
+            });
+
+            document.getElementById('autoMode').addEventListener('change', function() {
+                addLog(`[频谱] 自动模式: ${this.checked ? '开启' : '关闭'}`);
+            });
+
+            document.getElementById('timeConfirmBtn').addEventListener('click', () => {
+                const input = document.getElementById('timeConstant');
+                const val = parseFloat(input.value);
+                if (!isNaN(val) && val > 0) {
+                    addLog(`[频谱] 时间常数设置为: ${val} 秒`);
+                }
+            });
+
+            // ===== 灯光控制面板 =====
+            const lightHue = document.getElementById('lightHue');
+            const lightColorPreview = document.getElementById('lightColorPreview');
+            document.getElementById('lightTextSendBtn').addEventListener('click', () => {
+                const input = document.getElementById('lightTextInput');
+                const val = input.value.trim();
+                if (val) {
+                    addLog(`[灯光控制] 发送: ${val}`);
+                    input.value = '';
+                }
+            });
+            lightHue.addEventListener('input', function() {
+                const h = parseInt(this.value);
+                lightColorPreview.style.background = hueToHsl(h);
+            });
+            lightHue.addEventListener('change', function() {
+                addLog(`[灯光控制] 颜色 (色相): ${this.value}°`);
+            });
+            document.getElementById('lightBrightness').addEventListener('input', function() {
+                document.getElementById('lightBrightnessVal').innerText = `${this.value}%`;
+            });
+            document.getElementById('lightBrightness').addEventListener('change', function() {
+                addLog(`[灯光控制] 亮度: ${this.value}%`);
+            });
+        }
+        
+        // 页面卸载时断开蓝牙（优雅）
+        window.addEventListener('beforeunload', () => {
+            if(gattServer && gattServer.connected) {
+                gattServer.disconnect();
+            }
+        });
+        
+        // 初始化
+        function init() {
+            bindEvents();
+            bindTabEvents();
+            checkBluetoothSupport();
+            updateUIState(false);
+        }
+        
+        init();
+    })();
+</script>
+</body>
+</html>
