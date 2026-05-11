@@ -147,6 +147,15 @@
         .tab-btn:active { transform: none; }
         .tab-panel { display: none; padding: 16px 0 0 0; }
         .tab-panel.active { display: block; }
+        .panel-skeleton {
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 14px;
+            color: #64748b;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
         /* 控件行 */
         .control-row {
             display: flex;
@@ -325,6 +334,36 @@
             padding: 6px 16px;
             font-size: 0.8rem;
             border-radius: 10px;
+        }
+        .level-meter-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+        .level-meter {
+            flex: 1;
+            height: 10px;
+            background: #e2e8f0;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .level-meter-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #22c55e, #f59e0b, #ef4444);
+            transition: width 0.2s ease;
+        }
+        .inline-actions {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+        .inline-actions button {
+            flex: 1;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 0.82rem;
         }
         .log-area {
             background: #0f172a;
@@ -514,6 +553,123 @@
             hr {
                 margin: 12px 0;
             }
+            /* 麦克风面板 - 移动端EQ */
+            input[type="range"].mic-eq-slider {
+                -webkit-appearance: auto;
+                appearance: auto;
+                width: 100%;
+                height: 36px;
+                margin: 4px 0;
+            }
+            .mic-eq-band-container {
+                width: 100%;
+                max-width: 280px;
+            }
+            .mic-db-scale { display: none; }
+            .mic-ctrl-row {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .mic-ctrl-row input[type="range"] {
+                width: 100%;
+                flex: auto;
+            }
+        }
+
+        /* 麦克风面板 - EQ均衡器 / PA功率 / 开机默认音量 */
+        .mic-section-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #475569;
+            margin: 14px 0 6px 0;
+            padding-left: 2px;
+        }
+        .mic-eq-wrapper {
+            display: flex;
+            gap: 6px;
+            align-items: stretch;
+            margin: 8px 0;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .mic-db-scale {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 210px;
+            padding-right: 6px;
+            font-size: 0.65rem;
+            color: #94a3b8;
+            flex-shrink: 0;
+            margin-bottom: 26px;
+            min-width: 38px;
+            text-align: right;
+        }
+        .mic-eq-band-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+            min-width: 48px;
+        }
+        input[type="range"].mic-eq-slider {
+            -webkit-appearance: slider-vertical;
+            appearance: slider-vertical;
+            width: 38px;
+            height: 190px;
+            padding: 0 3px;
+            margin: 6px 0;
+            background: transparent;
+        }
+        .mic-eq-value {
+            width: 44px;
+            text-align: center;
+            padding: 3px 2px;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.7rem;
+            background: #fff;
+        }
+        .mic-eq-label {
+            font-weight: 600;
+            margin-top: 2px;
+            font-size: 0.68rem;
+            text-align: center;
+            color: #475569;
+        }
+        .mic-ctrl-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .mic-ctrl-row:last-child { border-bottom: none; }
+        .mic-ctrl-row > label {
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: #334155;
+            white-space: nowrap;
+            min-width: 70px;
+        }
+        .mic-ctrl-row input[type="range"] {
+            flex: 1;
+            min-width: 60px;
+        }
+        .mic-ctrl-row input[type="number"] {
+            width: 52px;
+            text-align: center;
+            padding: 4px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.78rem;
+        }
+        .mic-ctrl-val {
+            font-size: 0.78rem;
+            color: #64748b;
+            min-width: 32px;
+            text-align: right;
         }
     </style>
 </head>
@@ -565,6 +721,8 @@
         <div class="tab-nav">
             <button class="tab-btn active" data-tab="text">文字</button>
             <button class="tab-btn" data-tab="light">灯光</button>
+            <button class="tab-btn" data-tab="mic">麦克风</button>
+            <button class="tab-btn" data-tab="music">音乐</button>
         </div>
 
         <!-- 文字面板 -->
@@ -617,6 +775,69 @@
                 <span class="control-label">亮度</span>
                 <input type="range" id="lightBrightness" min="0" max="100" value="80">
                 <span class="control-value" id="lightBrightnessVal">80%</span>
+            </div>
+        </div>
+
+        <!-- 麦克风面板 -->
+        <div class="tab-panel" id="panel-mic">
+            <div class="mic-section-title">均衡器 (EQ)</div>
+            <div class="mic-eq-wrapper" id="micEqContainer">
+                <div class="mic-db-scale" id="micDbScale">
+                    <span>+12dB</span><span>+6dB</span><span>0dB</span><span>-6dB</span><span>-12dB</span>
+                </div>
+            </div>
+            <div class="mic-section-title">功率设置</div>
+            <div class="mic-ctrl-row">
+                <label>PA 功率</label>
+                <input type="range" id="micPaSlider" min="0" max="64" value="45" step="1">
+                <input type="number" id="micPaInput" min="0" max="64" value="45" step="1">
+                <span class="mic-ctrl-val" id="micPaVal">45</span>
+            </div>
+            <div class="mic-section-title">开机默认音量</div>
+            <div class="mic-ctrl-row">
+                <label>默认音量</label>
+                <input type="range" id="micVolSlider" min="0" max="15" value="8" step="1">
+                <input type="number" id="micVolInput" min="0" max="15" value="8" step="1">
+                <span class="mic-ctrl-val" id="micVolVal">8</span>
+            </div>
+        </div>
+
+        <!-- 音乐面板 -->
+        <div class="tab-panel" id="panel-music">
+            <div class="inline-actions">
+                <button id="musicPrevBtn">⏮ 上一首</button>
+                <button id="musicPlayBtn" class="primary">▶ 播放</button>
+                <button id="musicNextBtn">⏭ 下一首</button>
+            </div>
+            <div class="control-row">
+                <span class="control-label">模式</span>
+                <select id="musicMode" style="padding:6px 10px;border:1px solid #e2e8f0;border-radius:10px;font-size:0.82rem;">
+                    <option value="normal">普通</option>
+                    <option value="rhythm">节奏增强</option>
+                    <option value="ambient">氛围</option>
+                    <option value="energy">动感</option>
+                </select>
+            </div>
+            <div class="control-row">
+                <span class="control-label">速度 BPM</span>
+                <input type="range" id="musicTempo" min="60" max="180" value="120">
+                <span class="control-value" id="musicTempoVal">120</span>
+            </div>
+            <div class="control-row">
+                <span class="control-label">节奏强度</span>
+                <input type="range" id="musicIntensity" min="0" max="100" value="65">
+                <span class="control-value" id="musicIntensityVal">65%</span>
+            </div>
+            <div class="control-row">
+                <span class="control-label">灯效联动</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="musicSyncLight" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="inline-actions">
+                <button id="musicBeatBtn">触发节拍</button>
+                <button id="musicStopBtn" class="danger">停止</button>
             </div>
         </div>
     </div>
@@ -995,13 +1216,20 @@
             const tabBtns = document.querySelectorAll('.tab-btn');
             const tabPanels = document.querySelectorAll('.tab-panel');
 
+            function activateTab(tabName) {
+                const targetPanel = document.getElementById(`panel-${tabName}`);
+                if (!targetPanel) {
+                    addLog(`未找到目标面板: panel-${tabName}`, true);
+                    return;
+                }
+                tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
+                tabPanels.forEach(p => p.classList.remove('active'));
+                targetPanel.classList.add('active');
+            }
+
             tabBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
-                    const target = btn.dataset.tab;
-                    tabBtns.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    tabPanels.forEach(p => p.classList.remove('active'));
-                    document.getElementById(`panel-${target}`).classList.add('active');
+                    activateTab(btn.dataset.tab);
                 });
             });
 
@@ -1104,6 +1332,158 @@
             document.getElementById('lightBrightness').addEventListener('change', function() {
                 addLog(`[灯光] 亮度: ${this.value}%`);
             });
+
+            // ===== 麦克风面板 (EQ + PA + 音量) =====
+            const micEqBands = [
+                { label: '25Hz',  min: -12, max: 12, value: 0 },
+                { label: '40Hz',  min: -12, max: 12, value: 0 },
+                { label: '63Hz',  min: -12, max: 12, value: 0 },
+                { label: '100Hz', min: -12, max: 12, value: 0 },
+                { label: '160Hz', min: -12, max: 12, value: 0 },
+                { label: '250Hz', min: -12, max: 12, value: 0 },
+                { label: '400Hz', min: -12, max: 12, value: 0 },
+                { label: '630Hz', min: -12, max: 12, value: 0 },
+                { label: '1kHz',  min: -12, max: 12, value: 0 },
+                { label: '1.6kHz',min: -12, max: 12, value: 0 },
+                { label: '2.5kHz',min: -12, max: 12, value: 0 },
+                { label: '4KHz',  min: -12, max: 12, value: 0 },
+                { label: '6.3KHz',min: -12, max: 12, value: 0 },
+                { label: '10KHz', min: -12, max: 12, value: 0 },
+                { label: '16kHz', min: -12, max: 12, value: 0 }
+            ];
+            const micEqContainer = document.getElementById('micEqContainer');
+
+            micEqBands.forEach((band, i) => {
+                const el = document.createElement('div');
+                el.className = 'mic-eq-band-container';
+                el.innerHTML = `
+                    <input type="range" class="mic-eq-slider" id="micEqSlider${i}" min="${band.min}" max="${band.max}" value="${band.value}" step="1">
+                    <input type="number" class="mic-eq-value" id="micEqVal${i}" min="${band.min}" max="${band.max}" value="${band.value}" step="1">
+                    <span class="mic-eq-label">${band.label}</span>
+                `;
+                micEqContainer.appendChild(el);
+
+                const slider = document.getElementById(`micEqSlider${i}`);
+                const input = document.getElementById(`micEqVal${i}`);
+
+                slider.addEventListener('input', () => {
+                    const v = parseInt(slider.value);
+                    band.value = v;
+                    input.value = v;
+                });
+                slider.addEventListener('change', () => {
+                    addLog(`[麦克风] EQ ${band.label}: ${band.value}dB`);
+                });
+
+                input.addEventListener('input', () => {
+                    let v = parseInt(input.value);
+                    if (isNaN(v)) v = 0;
+                    v = Math.max(-12, Math.min(12, v));
+                    band.value = v;
+                    slider.value = v;
+                    input.value = v;
+                });
+                input.addEventListener('change', () => {
+                    addLog(`[麦克风] EQ ${band.label}: ${band.value}dB`);
+                });
+            });
+
+            // PA 功率控制
+            const micPaSlider = document.getElementById('micPaSlider');
+            const micPaInput = document.getElementById('micPaInput');
+            const micPaVal = document.getElementById('micPaVal');
+            function syncMicPa(v) {
+                v = Math.max(0, Math.min(64, parseInt(v) || 45));
+                micPaSlider.value = v;
+                micPaInput.value = v;
+                micPaVal.textContent = v;
+            }
+            micPaSlider.addEventListener('input', () => syncMicPa(micPaSlider.value));
+            micPaSlider.addEventListener('change', () => addLog(`[麦克风] PA功率: ${micPaSlider.value}`));
+            micPaInput.addEventListener('input', () => syncMicPa(micPaInput.value));
+            micPaInput.addEventListener('change', () => addLog(`[麦克风] PA功率: ${micPaInput.value}`));
+
+            // 开机默认音量控制
+            const micVolSlider = document.getElementById('micVolSlider');
+            const micVolInput = document.getElementById('micVolInput');
+            const micVolVal = document.getElementById('micVolVal');
+            function syncMicVol(v) {
+                v = Math.max(0, Math.min(15, parseInt(v) || 8));
+                micVolSlider.value = v;
+                micVolInput.value = v;
+                micVolVal.textContent = v;
+            }
+            micVolSlider.addEventListener('input', () => syncMicVol(micVolSlider.value));
+            micVolSlider.addEventListener('change', () => addLog(`[麦克风] 开机默认音量: ${micVolSlider.value}`));
+            micVolInput.addEventListener('input', () => syncMicVol(micVolInput.value));
+            micVolInput.addEventListener('change', () => addLog(`[麦克风] 开机默认音量: ${micVolInput.value}`));
+
+            // ===== 音乐面板 =====
+            const musicPrevBtn = document.getElementById('musicPrevBtn');
+            const musicPlayBtn = document.getElementById('musicPlayBtn');
+            const musicNextBtn = document.getElementById('musicNextBtn');
+            const musicMode = document.getElementById('musicMode');
+            const musicTempo = document.getElementById('musicTempo');
+            const musicTempoVal = document.getElementById('musicTempoVal');
+            const musicIntensity = document.getElementById('musicIntensity');
+            const musicIntensityVal = document.getElementById('musicIntensityVal');
+            const musicSyncLight = document.getElementById('musicSyncLight');
+            const musicBeatBtn = document.getElementById('musicBeatBtn');
+            const musicStopBtn = document.getElementById('musicStopBtn');
+            let musicPlaying = false;
+
+            function setMusicPlaying(playing, actionLabel) {
+                musicPlaying = playing;
+                musicPlayBtn.innerText = playing ? '⏸ 暂停' : '▶ 播放';
+                musicPlayBtn.classList.toggle('primary', !playing);
+                addLog(`[音乐] ${actionLabel}，状态: ${playing ? '播放中' : '已暂停'}`);
+            }
+
+            musicPlayBtn.addEventListener('click', () => {
+                setMusicPlaying(!musicPlaying, musicPlaying ? '暂停' : '播放');
+            });
+
+            musicPrevBtn.addEventListener('click', () => {
+                addLog('[音乐] 切换到上一首');
+            });
+
+            musicNextBtn.addEventListener('click', () => {
+                addLog('[音乐] 切换到下一首');
+            });
+
+            musicMode.addEventListener('change', function() {
+                addLog(`[音乐] 模式切换: ${this.options[this.selectedIndex].text}`);
+            });
+
+            musicTempo.addEventListener('input', function() {
+                musicTempoVal.innerText = `${this.value}`;
+            });
+            musicTempo.addEventListener('change', function() {
+                addLog(`[音乐] 速度: ${this.value} BPM`);
+            });
+
+            musicIntensity.addEventListener('input', function() {
+                musicIntensityVal.innerText = `${this.value}%`;
+            });
+            musicIntensity.addEventListener('change', function() {
+                addLog(`[音乐] 节奏强度: ${this.value}%`);
+            });
+
+            musicSyncLight.addEventListener('change', function() {
+                addLog(`[音乐] 灯效联动: ${this.checked ? '开启' : '关闭'}`);
+            });
+
+            musicBeatBtn.addEventListener('click', () => {
+                const bpm = parseInt(musicTempo.value, 10);
+                const intensity = parseInt(musicIntensity.value, 10);
+                addLog(`[音乐] 触发节拍: BPM ${bpm}, 强度 ${intensity}%`);
+            });
+
+            musicStopBtn.addEventListener('click', () => {
+                setMusicPlaying(false, '停止');
+                addLog('[音乐] 已停止并复位到待机状态');
+            });
+
         }
         
         // 页面卸载时断开蓝牙（优雅）
