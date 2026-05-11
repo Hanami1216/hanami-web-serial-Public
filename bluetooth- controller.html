@@ -564,8 +564,7 @@
     <div class="info-card">
         <div class="tab-nav">
             <button class="tab-btn active" data-tab="text">文字</button>
-            <button class="tab-btn" data-tab="spectrum">频谱</button>
-            <button class="tab-btn" data-tab="light">灯光控制</button>
+            <button class="tab-btn" data-tab="light">灯光</button>
         </div>
 
         <!-- 文字面板 -->
@@ -586,8 +585,8 @@
             </div>
         </div>
 
-        <!-- 频谱面板 -->
-        <div class="tab-panel" id="panel-spectrum">
+        <!-- 灯光面板（已合并频谱控制） -->
+        <div class="tab-panel" id="panel-light">
             <div class="block-grid" id="spectrumGrid">
                 <!-- JS 动态生成 16 个方块 -->
             </div>
@@ -604,10 +603,7 @@
                 <span style="font-size:0.8rem;color:#94a3b8;">秒</span>
                 <button id="timeConfirmBtn">确认</button>
             </div>
-        </div>
-
-        <!-- 灯光控制面板 -->
-        <div class="tab-panel" id="panel-light">
+            <hr>
             <div class="send-row">
                 <input type="text" id="lightTextInput" placeholder="输入文字...">
                 <button id="lightTextSendBtn" class="primary">发送</button>
@@ -1039,7 +1035,7 @@
                 addLog(`[文字] 亮度: ${this.value}%`);
             });
 
-            // ===== 频谱面板 =====
+            // ===== 灯光面板（频谱控制） =====
             const spectrumGrid = document.getElementById('spectrumGrid');
             const blockColors = [
                 '#ef4444','#f97316','#eab308','#22c55e',
@@ -1066,32 +1062,32 @@
                         if (b !== block) b.classList.add('dimmed');
                         else b.classList.remove('dimmed');
                     });
-                    addLog(`[频谱] 选中灯效${i + 1} (${color})`);
+                    addLog(`[灯光] 选中灯效${i + 1} (${color})`);
                 });
                 spectrumGrid.appendChild(block);
                 allBlocks.push(block);
             });
 
             document.getElementById('autoMode').addEventListener('change', function() {
-                addLog(`[频谱] 自动模式: ${this.checked ? '开启' : '关闭'}`);
+                addLog(`[灯光] 自动模式: ${this.checked ? '开启' : '关闭'}`);
             });
 
             document.getElementById('timeConfirmBtn').addEventListener('click', () => {
                 const input = document.getElementById('timeConstant');
                 const val = parseFloat(input.value);
                 if (!isNaN(val) && val > 0) {
-                    addLog(`[频谱] 时间常数设置为: ${val} 秒`);
+                    addLog(`[灯光] 时间常数设置为: ${val} 秒`);
                 }
             });
 
-            // ===== 灯光控制面板 =====
+            // ===== 灯光面板（文字/色相/亮度） =====
             const lightHue = document.getElementById('lightHue');
             const lightColorPreview = document.getElementById('lightColorPreview');
             document.getElementById('lightTextSendBtn').addEventListener('click', () => {
                 const input = document.getElementById('lightTextInput');
                 const val = input.value.trim();
                 if (val) {
-                    addLog(`[灯光控制] 发送: ${val}`);
+                    addLog(`[灯光] 发送: ${val}`);
                     input.value = '';
                 }
             });
@@ -1100,13 +1096,13 @@
                 lightColorPreview.style.background = hueToHsl(h);
             });
             lightHue.addEventListener('change', function() {
-                addLog(`[灯光控制] 颜色 (色相): ${this.value}°`);
+                addLog(`[灯光] 颜色 (色相): ${this.value}°`);
             });
             document.getElementById('lightBrightness').addEventListener('input', function() {
                 document.getElementById('lightBrightnessVal').innerText = `${this.value}%`;
             });
             document.getElementById('lightBrightness').addEventListener('change', function() {
-                addLog(`[灯光控制] 亮度: ${this.value}%`);
+                addLog(`[灯光] 亮度: ${this.value}%`);
             });
         }
         
