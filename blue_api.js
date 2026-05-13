@@ -1,4 +1,8 @@
 (function(){
+    // ===== 日志面板开关 =====
+    // 设为 true 可在页面上显示实时日志区域（默认隐藏，通过 F12 查看）
+    const SHOW_LOG_UI = false;
+
     // DOM 元素
     const scanBtn = document.getElementById('scanBtn');
     const disconnectBtn = document.getElementById('disconnectBtn');
@@ -11,6 +15,12 @@
     const serviceCountSpan = document.getElementById('serviceCount');
     const logPanel = document.getElementById('logPanel');
     const clearLogBtn = document.getElementById('clearLogBtn');
+
+    // 根据开关控制日志面板显示
+    if (SHOW_LOG_UI) {
+        document.querySelector('.log-title').style.display = '';
+        document.querySelector('.log-area').style.display = '';
+    }
 
     // 全局蓝牙对象
     let bluetoothDevice = null;      // 当前选中的设备
