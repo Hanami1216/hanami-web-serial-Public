@@ -194,32 +194,46 @@
             box-shadow: 0 1px 4px rgba(59,130,246,0.3);
         }
         /* 色相渐变条 */
-        .hue-slider {
+        input.hue-slider {
             -webkit-appearance: none;
-            width: 140px;
-            height: 8px;
-            border-radius: 4px;
+            appearance: none;
+            width: 200px;
+            max-width: none;
+            height: 18px;
+            border-radius: 10px;
             outline: none;
             background: linear-gradient(to right,
                 #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000
             );
+            flex: none;
         }
-        .hue-slider::-webkit-slider-thumb {
+        input.hue-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             width: 24px;
             height: 24px;
             border-radius: 50%;
-            background: white;
+            background: var(--thumb-color, white);
             border: 3px solid #334155;
             cursor: pointer;
             box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+            transition: background 0.1s ease;
         }
-        .color-preview {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
+        .color-preview-box {
+            width: 140px;
+            height: 64px;
+            border-radius: 12px;
             border: 2px solid #e2e8f0;
             flex-shrink: 0;
+            transition: background 0.1s;
+            margin: 6px 0 2px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .hue-degree {
+            font-size: 0.75rem;
+            color: #64748b;
+            min-width: 52px;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
         }
         /* 发送行 */
         .send-row {
@@ -502,11 +516,16 @@
             input[type="range"] {
                 width: 100%;
             }
-            .hue-slider {
+            input.hue-slider {
                 width: 100%;
+                max-width: none;
             }
             .color-preview {
                 align-self: flex-start;
+            }
+            .color-preview-box {
+                width: 100%;
+                height: 48px;
             }
             .send-row {
                 flex-direction: column;
@@ -671,6 +690,186 @@
             min-width: 32px;
             text-align: right;
         }
+
+        /* ===== 新增：协议文档 V1.5 控件样式 ===== */
+        .panel-section {
+            margin: 14px 0 0 0;
+        }
+        .panel-section:first-child {
+            margin-top: 0;
+        }
+        .panel-section-title {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #475569;
+            margin: 0 0 6px 0;
+            padding: 6px 0 2px 0;
+            border-bottom: 1px solid #eef2f6;
+        }
+        .effect-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 0;
+            border-bottom: 1px solid #f8fafc;
+            flex-wrap: wrap;
+            min-height: 40px;
+            
+        }
+        .effect-row:last-child {
+            border-bottom: none;
+        }
+        .effect-label {
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: #334155;
+            min-width: 70px;
+            white-space: nowrap;
+        }
+        .effect-toggle {
+            flex-shrink: 0;
+        }
+        .effect-toggle .toggle-switch {
+            width: 40px;
+            height: 22px;
+        }
+        .effect-toggle .toggle-slider::before {
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+        }
+        .effect-toggle .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(18px);
+        }
+        .effect-slider-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 100px;
+        }
+        .effect-slider-wrap input[type="range"] {
+            flex: 1;
+            min-width: 60px;
+            max-width: 160px;
+        }
+        .effect-value {
+            font-size: 0.78rem;
+            color: #64748b;
+            min-width: 28px;
+            text-align: right;
+        }
+        .effect-select {
+            padding: 5px 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            background: #fff;
+            outline: none;
+        }
+        .effect-select:focus {
+            border-color: #3b82f6;
+        }
+
+        /* EQ 垂直滑块容器 */
+        .eq-wrapper {
+            display: flex;
+            gap: 4px;
+            align-items: stretch;
+            margin: 4px 0 2px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .eq-db-scale {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 170px;
+            padding-right: 4px;
+            font-size: 0.6rem;
+            color: #94a3b8;
+            flex-shrink: 0;
+            margin-bottom: 22px;
+            min-width: 30px;
+            text-align: right;
+        }
+        .eq-band {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+            min-width: 40px;
+        }
+        .eq-band input[type="range"] {
+            -webkit-appearance: slider-vertical;
+            appearance: slider-vertical;
+            width: 32px;
+            height: 150px;
+            padding: 0 2px;
+            margin: 4px 0;
+            background: transparent;
+        }
+        .eq-band-value {
+            width: 38px;
+            text-align: center;
+            padding: 2px;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.65rem;
+            background: #fff;
+        }
+        .eq-band-label {
+            font-weight: 600;
+            margin-top: 2px;
+            font-size: 0.62rem;
+            color: #475569;
+        }
+
+        /* 模式按钮网格 */
+        .mode-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            padding: 6px 0 10px;
+        }
+        .mode-btn {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            color: #475569;
+            box-shadow: none;
+        }
+        .mode-btn:active {
+            transform: scale(0.96);
+        }
+        .mode-btn.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+
+        /* 按钮行（底部保存/重置等） */
+        .action-row {
+            display: flex;
+            gap: 10px;
+            padding: 10px 0 4px;
+            flex-wrap: wrap;
+        }
+        .action-row button {
+            flex: 1;
+            min-width: 80px;
+            padding: 10px 16px;
+            font-size: 0.82rem;
+            border-radius: 12px;
+        }
     </style>
 </head>
 <body>
@@ -725,119 +924,320 @@
             <button class="tab-btn" data-tab="music">音乐</button>
         </div>
 
-        <!-- 文字面板 -->
+        <!-- 文字面板（协议 Byte11~13：文字内容/7种显示模式/颜色/渐变速度/滚动速度/亮度） -->
         <div class="tab-panel active" id="panel-text">
-            <div class="send-row">
-                <input type="text" id="textInput" placeholder="输入文字...">
-                <button id="textSendBtn" class="primary">发送</button>
-            </div>
-            <div class="control-row">
-                <span class="control-label">颜色</span>
-                <input type="range" class="hue-slider" id="textHue" min="0" max="360" value="0">
-                <span class="color-preview" id="textColorPreview" style="background: hsl(0,100%,50%);"></span>
-            </div>
-            <div class="control-row">
-                <span class="control-label">亮度</span>
-                <input type="range" id="textBrightness" min="0" max="100" value="80">
-                <span class="control-value" id="textBrightnessVal">80%</span>
-            </div>
-        </div>
-
-        <!-- 灯光面板（已合并频谱控制） -->
-        <div class="tab-panel" id="panel-light">
-            <div class="block-grid" id="spectrumGrid">
-                <!-- JS 动态生成 16 个方块 -->
-            </div>
-            <div class="control-row">
-                <span class="control-label">自动模式</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="autoMode">
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-            <div class="time-input-row">
-                <span class="control-label">时间常数</span>
-                <input type="number" id="timeConstant" value="1.0" step="0.1" min="0.1" max="10">
-                <span style="font-size:0.8rem;color:#94a3b8;">秒</span>
-                <button id="timeConfirmBtn">确认</button>
-            </div>
-            <hr>
-            <div class="send-row">
-                <input type="text" id="lightTextInput" placeholder="输入文字...">
-                <button id="lightTextSendBtn" class="primary">发送</button>
-            </div>
-            <div class="control-row">
-                <span class="control-label">颜色</span>
-                <input type="range" class="hue-slider" id="lightHue" min="0" max="360" value="0">
-                <span class="color-preview" id="lightColorPreview" style="background: hsl(0,100%,50%);"></span>
-            </div>
-            <div class="control-row">
-                <span class="control-label">亮度</span>
-                <input type="range" id="lightBrightness" min="0" max="100" value="80">
-                <span class="control-value" id="lightBrightnessVal">80%</span>
-            </div>
-        </div>
-
-        <!-- 麦克风面板 -->
-        <div class="tab-panel" id="panel-mic">
-            <div class="mic-section-title">均衡器 (EQ)</div>
-            <div class="mic-eq-wrapper" id="micEqContainer">
-                <div class="mic-db-scale" id="micDbScale">
-                    <span>+12dB</span><span>+6dB</span><span>0dB</span><span>-6dB</span><span>-12dB</span>
+            <div class="panel-section">
+                <div class="panel-section-title">文字内容</div>
+                <div class="send-row">
+                    <input type="text" id="textContent" placeholder="输入文字...">
+                    <button id="textSendBtn" class="primary">发送</button>
                 </div>
             </div>
-            <div class="mic-section-title">功率设置</div>
-            <div class="mic-ctrl-row">
-                <label>PA 功率</label>
-                <input type="range" id="micPaSlider" min="0" max="64" value="45" step="1">
-                <input type="number" id="micPaInput" min="0" max="64" value="45" step="1">
-                <span class="mic-ctrl-val" id="micPaVal">45</span>
+
+            <div class="panel-section">
+                <div class="panel-section-title">显示模式</div>
+                <div class="mode-grid" id="textModeGrid">
+                    <!-- JS 动态生成 7 个模式按钮 -->
+                </div>
             </div>
-            <div class="mic-section-title">开机默认音量</div>
-            <div class="mic-ctrl-row">
-                <label>默认音量</label>
-                <input type="range" id="micVolSlider" min="0" max="15" value="8" step="1">
-                <input type="number" id="micVolInput" min="0" max="15" value="8" step="1">
-                <span class="mic-ctrl-val" id="micVolVal">8</span>
+
+            <div class="panel-section">
+                <div class="panel-section-title">样式设置</div>
+                <div class="effect-row color-row">
+                    <span class="effect-label">单色颜色</span>
+                    <div class="color-preview-box" id="textColorPreview" style="background: hsl(0,100%,50%);"></div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label"></span>
+                    <div class="effect-slider-wrap">
+                        <input type="range" class="hue-slider" id="textColor" min="0" max="255" value="0">
+                        <span class="hue-degree" id="textColorHue">色相: 0°</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">渐变速度</span>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="textGradientSpeed" min="0" max="16" value="8">
+                        <span class="effect-value" id="textGradientSpeedVal">8</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">滚动速度</span>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="textScrollSpeed" min="0" max="16" value="8">
+                        <span class="effect-value" id="textScrollSpeedVal">8</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">亮度</span>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="textBrightness" min="0" max="16" value="8">
+                        <span class="effect-value" id="textBrightnessVal">8</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="action-row">
+                    <button id="textSaveBtn" class="primary">保存设置</button>
+                </div>
             </div>
         </div>
 
-        <!-- 音乐面板 -->
+        <!-- 灯光面板（协议 Byte7~10：16种灯光模式/自动模式/颜色/亮度/速度） -->
+        <div class="tab-panel" id="panel-light">
+            <div class="panel-section">
+                <div class="panel-section-title">灯光模式 (1~16)</div>
+                <div class="mode-grid" id="lightModeGrid">
+                    <!-- JS 动态生成 16 个模式按钮 -->
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-section-title">自动模式</div>
+                <div class="effect-row">
+                    <span class="effect-label">自动模式</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="lightAutoToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="lightAutoParam" min="5" max="255" value="128">
+                        <span class="effect-value" id="lightAutoParamVal">128</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-section-title">参数设置</div>
+                <div class="effect-row color-row">
+                    <span class="effect-label">颜色</span>
+                    <div class="color-preview-box" id="lightColorPreview" style="background: hsl(0,100%,50%);"></div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label"></span>
+                    <div class="effect-slider-wrap">
+                        <input type="range" class="hue-slider" id="lightColor" min="0" max="255" value="0">
+                        <span class="hue-degree" id="lightColorHue">色相: 0°</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">亮度</span>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="lightBrightness" min="0" max="16" value="8">
+                        <span class="effect-value" id="lightBrightnessVal">8</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">速度</span>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="lightSpeed" min="0" max="16" value="8">
+                        <span class="effect-value" id="lightSpeedVal">8</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="action-row">
+                    <button id="lightSaveBtn" class="primary">保存设置</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 麦克风面板（协议 Byte5~6：MIC音量/优先/10频EQ/回声/混响/魔音） -->
+        <div class="tab-panel" id="panel-mic">
+            <div class="panel-section">
+                <div class="panel-section-title">MIC 音量控制</div>
+                <div class="effect-row">
+                    <span class="effect-label">MIC 音量</span>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="micVol" min="0" max="32" value="16">
+                        <span class="effect-value" id="micVolVal">16</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">MIC 优先</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="micPriorityToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="micPriorityVal" min="0" max="32" value="0">
+                        <span class="effect-value" id="micPriorityValDisplay">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-section-title">均衡器 (EQ) 10 频点</div>
+                <div class="eq-wrapper" id="micEqWrapper">
+                    <div class="eq-db-scale">
+                        <span>+12</span><span>+6</span><span>0</span><span>-6</span><span>-12</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-section-title">MIC 效果</div>
+                <div class="effect-row">
+                    <span class="effect-label">回声</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="micEchoToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="micEchoDecay" min="0" max="32" value="0" placeholder="衰减">
+                        <span class="effect-value" id="micEchoDecayVal">0</span>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="micEchoInterval" min="0" max="32" value="0" placeholder="间隔">
+                        <span class="effect-value" id="micEchoIntervalVal">0</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">混响</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="micReverbToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="micReverbSize" min="0" max="32" value="0">
+                        <span class="effect-value" id="micReverbSizeVal">0</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">魔音效果</span>
+                    <select class="effect-select" id="micMagicSound">
+                        <option value="0">关闭</option>
+                        <option value="1">儿童</option>
+                        <option value="2">女声</option>
+                        <option value="3">男声</option>
+                        <option value="4">电音</option>
+                        <option value="5">魔音</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="action-row">
+                    <button id="micResetBtn" class="danger">一键恢复默认</button>
+                    <button id="micSaveBtn" class="primary">保存设置</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 音乐面板（协议 Byte2~4：主音量/高低中音/10频点EQ/3D丽音/人声消除/虚拟低音/人声激励） -->
         <div class="tab-panel" id="panel-music">
-            <div class="inline-actions">
-                <button id="musicPrevBtn">⏮ 上一首</button>
-                <button id="musicPlayBtn" class="primary">▶ 播放</button>
-                <button id="musicNextBtn">⏭ 下一首</button>
+            <div class="panel-section">
+                <div class="panel-section-title">主音量控制</div>
+                <div class="effect-row">
+                    <span class="effect-label">主音量</span>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="musicVol" min="0" max="32" value="20">
+                        <span class="effect-value" id="musicVolVal">20</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">高音</span>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="musicTreble" min="0" max="32" value="16">
+                        <span class="effect-value" id="musicTrebleVal">16</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">中音</span>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="musicMid" min="0" max="32" value="16">
+                        <span class="effect-value" id="musicMidVal">16</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">低音</span>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="musicBass" min="0" max="32" value="16">
+                        <span class="effect-value" id="musicBassVal">16</span>
+                    </div>
+                </div>
             </div>
-            <div class="control-row">
-                <span class="control-label">模式</span>
-                <select id="musicMode" style="padding:6px 10px;border:1px solid #e2e8f0;border-radius:10px;font-size:0.82rem;">
-                    <option value="normal">普通</option>
-                    <option value="rhythm">节奏增强</option>
-                    <option value="ambient">氛围</option>
-                    <option value="energy">动感</option>
-                </select>
+
+            <div class="panel-section">
+                <div class="panel-section-title">均衡器 (EQ) 10 频点</div>
+                <div class="eq-wrapper" id="musicEqWrapper">
+                    <div class="eq-db-scale">
+                        <span>+12</span><span>+6</span><span>0</span><span>-6</span><span>-12</span>
+                    </div>
+                </div>
             </div>
-            <div class="control-row">
-                <span class="control-label">速度 BPM</span>
-                <input type="range" id="musicTempo" min="60" max="180" value="120">
-                <span class="control-value" id="musicTempoVal">120</span>
+
+            <div class="panel-section">
+                <div class="panel-section-title">音效增强</div>
+                <div class="effect-row">
+                    <span class="effect-label">3D 丽音</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="music3dToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="music3dVal" min="0" max="32" value="0">
+                        <span class="effect-value" id="music3dValDisplay">0</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">人声消除</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="musicVocalCutToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="musicVocalCutVal" min="0" max="100" value="0">
+                        <span class="effect-value" id="musicVocalCutValDisplay">0</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">虚拟低音</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="musicVbToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="musicVbVal" min="0" max="100" value="0">
+                        <span class="effect-value" id="musicVbValDisplay">0</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">人声激励</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="musicExciterToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="musicExciterVal" min="0" max="32" value="0">
+                        <span class="effect-value" id="musicExciterValDisplay">0</span>
+                    </div>
+                </div>
             </div>
-            <div class="control-row">
-                <span class="control-label">节奏强度</span>
-                <input type="range" id="musicIntensity" min="0" max="100" value="65">
-                <span class="control-value" id="musicIntensityVal">65%</span>
-            </div>
-            <div class="control-row">
-                <span class="control-label">灯效联动</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="musicSyncLight" checked>
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-            <div class="inline-actions">
-                <button id="musicBeatBtn">触发节拍</button>
-                <button id="musicStopBtn" class="danger">停止</button>
+
+            <div class="panel-section">
+                <div class="action-row">
+                    <button id="musicResetBtn" class="danger">一键恢复默认</button>
+                    <button id="musicSaveBtn" class="primary">保存设置</button>
+                </div>
             </div>
         </div>
     </div>

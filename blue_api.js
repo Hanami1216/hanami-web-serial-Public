@@ -374,107 +374,155 @@
             });
         });
 
-        // 辅助: Hue → HSL 字符串
-        function hueToHsl(h) {
-            return `hsl(${h},100%,50%)`;
+        // 更新色相滑块的滑块钮颜色
+        function updateHueSlider(slider) {
+            const v = parseInt(slider.value);
+            const h = Math.round((v / 255) * 360);
+            slider.style.setProperty('--thumb-color', `hsl(${h},100%,50%)`);
+        }
+
+        // ===== 通用: 滑块值同步 =====
+        function bindSlider(sliderId, displayId, unit = '') {
+            const slider = document.getElementById(sliderId);
+            const display = document.getElementById(displayId);
+            if (!slider || !display) return;
+            slider.addEventListener('input', () => {
+                display.textContent = slider.value + unit;
+            });
         }
 
         // ===== 文字面板 =====
-        const textHue = document.getElementById('textHue');
-        const textColorPreview = document.getElementById('textColorPreview');
-        document.getElementById('textSendBtn').addEventListener('click', () => {
-            const input = document.getElementById('textInput');
-            const val = input.value.trim();
+        document.getElementById('textSendBtn')?.addEventListener('click', () => {
+            const input = document.getElementById('textContent');
+            const val = input?.value.trim();
             if (val) {
-                addLog(`[文字] 发送: ${val}`);
+                addLog(`[文字] 发送内容: ${val}`);
                 input.value = '';
             }
         });
-        textHue.addEventListener('input', function() {
-            const h = parseInt(this.value);
-            textColorPreview.style.background = hueToHsl(h);
-        });
-        textHue.addEventListener('change', function() {
-            addLog(`[文字] 颜色 (色相): ${this.value}°`);
-        });
-        document.getElementById('textBrightness').addEventListener('input', function() {
-            document.getElementById('textBrightnessVal').innerText = `${this.value}%`;
-        });
-        document.getElementById('textBrightness').addEventListener('change', function() {
-            addLog(`[文字] 亮度: ${this.value}%`);
+
+        // 文字：7 种显示模式
+        const textModeLabels = ['自动切换', '文本显示', '歌词显示', '频谱0', '频谱1', '频谱2', '频谱3'];
+        const textModeGrid = document.getElementById('textModeGrid');
+        let selectedTextMode = null;
+        textModeLabels.forEach((label, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'mode-btn';
+            btn.textContent = label;
+            btn.addEventListener('click', () => {
+                if (selectedTextMode) selectedTextMode.classList.remove('active');
+                btn.classList.add('active');
+                selectedTextMode = btn;
+                addLog(`[文字] 显示模式: ${label}`);
+            });
+            textModeGrid.appendChild(btn);
         });
 
-        // ===== 灯光面板（频谱控制） =====
-        const spectrumGrid = document.getElementById('spectrumGrid');
-        const blockColors = [
+        // 文字颜色
+        const textColor = document.getElementById('textColor');
+        const textColorPreview = document.getElementById('textColorPreview');
+        const textColorHue = document.getElementById('textColorHue');
+        if (textColor && textColorPreview) {
+            function updateTextColor() {
+                const v = parseInt(textColor.value);
+                const h = Math.round((v / 255) * 360);
+                textColorPreview.style.background = `hsl(${h},100%,50%)`;
+                textColorHue.textContent = `色相: ${h}°`;
+                updateHueSlider(textColor);
+            }
+            textColor.addEventListener('input', updateTextColor);
+            textColor.addEventListener('change', function() {
+                addLog(`[文字] 单色颜色: ${this.value}`);
+            });
+            updateTextColor(); // 初始化
+        }
+        bindSlider('textGradientSpeed', 'textGradientSpeedVal');
+        bindSlider('textScrollSpeed', 'textScrollSpeedVal');
+        bindSlider('textBrightness', 'textBrightnessVal');
+        document.getElementById('textSaveBtn')?.addEventListener('click', () => {
+            addLog(`[文字] 保存设置`);
+        });
+
+        // ===== 灯光面板 =====
+        // 灯光：16 种模式
+        const lightModeGrid = document.getElementById('lightModeGrid');
+        let selectedLightMode = null;
+        const lightModeColors = [
             '#ef4444','#f97316','#eab308','#22c55e',
             '#14b8a6','#06b6d4','#3b82f6','#6366f1',
             '#a855f7','#ec4899','#f43f5e','#fb923c',
             '#facc15','#4ade80','#2dd4bf','#8b5cf6'
         ];
-        let selectedBlock = null;
-        const allBlocks = [];
-        blockColors.forEach((color, i) => {
-            const block = document.createElement('div');
-            block.className = 'color-block';
-            block.style.background = color;
-            block.dataset.index = i;
-            block.textContent = `灯效${i + 1}`;
-            block.addEventListener('click', () => {
-                if (selectedBlock === block) return;
-                if (selectedBlock) {
-                    selectedBlock.classList.remove('selected');
+        for (let i = 0; i < 16; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'mode-btn';
+            btn.textContent = `模式${i + 1}`;
+            btn.style.background = lightModeColors[i];
+            btn.style.color = '#fff';
+            btn.style.borderColor = 'transparent';
+            btn.addEventListener('click', () => {
+                if (selectedLightMode) {
+                    selectedLightMode.classList.remove('active');
+                    selectedLightMode.style.color = '#fff';
                 }
-                block.classList.add('selected');
-                selectedBlock = block;
-                allBlocks.forEach(b => {
-                    if (b !== block) b.classList.add('dimmed');
-                    else b.classList.remove('dimmed');
-                });
-                addLog(`[灯光] 选中灯效${i + 1} (${color})`);
+                btn.classList.add('active');
+                btn.style.color = '#fff';
+                selectedLightMode = btn;
+                addLog(`[灯光] 选中模式 ${i + 1}`);
             });
-            spectrumGrid.appendChild(block);
-            allBlocks.push(block);
-        });
+            lightModeGrid.appendChild(btn);
+        }
 
-        document.getElementById('autoMode').addEventListener('change', function() {
+        // 灯光自动模式
+        document.getElementById('lightAutoToggle')?.addEventListener('change', function() {
             addLog(`[灯光] 自动模式: ${this.checked ? '开启' : '关闭'}`);
         });
-
-        document.getElementById('timeConfirmBtn').addEventListener('click', () => {
-            const input = document.getElementById('timeConstant');
-            const val = parseFloat(input.value);
-            if (!isNaN(val) && val > 0) {
-                addLog(`[灯光] 时间常数设置为: ${val} 秒`);
-            }
+        document.getElementById('lightAutoParam')?.addEventListener('input', function() {
+            document.getElementById('lightAutoParamVal').textContent = this.value;
+        });
+        document.getElementById('lightAutoParam')?.addEventListener('change', function() {
+            addLog(`[灯光] 自动模式参数: ${this.value}`);
         });
 
-        // ===== 灯光面板（文字/色相/亮度） =====
-        const lightHue = document.getElementById('lightHue');
+        // 灯光颜色/亮度/速度
+        const lightColor = document.getElementById('lightColor');
         const lightColorPreview = document.getElementById('lightColorPreview');
-        document.getElementById('lightTextSendBtn').addEventListener('click', () => {
-            const input = document.getElementById('lightTextInput');
-            const val = input.value.trim();
-            if (val) {
-                addLog(`[灯光] 发送: ${val}`);
-                input.value = '';
+        const lightColorHue = document.getElementById('lightColorHue');
+        if (lightColor && lightColorPreview) {
+            function updateLightColor() {
+                const v = parseInt(lightColor.value);
+                const h = Math.round((v / 255) * 360);
+                lightColorPreview.style.background = `hsl(${h},100%,50%)`;
+                lightColorHue.textContent = `色相: ${h}°`;
+                updateHueSlider(lightColor);
             }
-        });
-        lightHue.addEventListener('input', function() {
-            const h = parseInt(this.value);
-            lightColorPreview.style.background = hueToHsl(h);
-        });
-        lightHue.addEventListener('change', function() {
-            addLog(`[灯光] 颜色 (色相): ${this.value}°`);
-        });
-        document.getElementById('lightBrightness').addEventListener('input', function() {
-            document.getElementById('lightBrightnessVal').innerText = `${this.value}%`;
-        });
-        document.getElementById('lightBrightness').addEventListener('change', function() {
-            addLog(`[灯光] 亮度: ${this.value}%`);
+            lightColor.addEventListener('input', updateLightColor);
+            lightColor.addEventListener('change', function() {
+                addLog(`[灯光] 颜色: ${this.value}`);
+            });
+            updateLightColor(); // 初始化
+        }
+        bindSlider('lightBrightness', 'lightBrightnessVal');
+        bindSlider('lightSpeed', 'lightSpeedVal');
+        document.getElementById('lightSaveBtn')?.addEventListener('click', () => {
+            addLog(`[灯光] 保存设置`);
         });
 
-        // ===== 麦克风面板 (EQ + PA + 音量) =====
+        // ===== 麦克风面板 =====
+        bindSlider('micVol', 'micVolVal');
+
+        // MIC 优先
+        document.getElementById('micPriorityToggle')?.addEventListener('change', function() {
+            addLog(`[麦克风] MIC优先: ${this.checked ? '开启' : '关闭'}`);
+        });
+        document.getElementById('micPriorityVal')?.addEventListener('input', function() {
+            document.getElementById('micPriorityValDisplay').textContent = this.value;
+        });
+        document.getElementById('micPriorityVal')?.addEventListener('change', function() {
+            addLog(`[麦克风] MIC优先值: ${this.value}`);
+        });
+
+        // MIC EQ 10 频点
         const micEqBands = [
             { label: '25Hz',  min: -12, max: 12, value: 0 },
             { label: '40Hz',  min: -12, max: 12, value: 0 },
@@ -492,20 +540,20 @@
             { label: '10KHz', min: -12, max: 12, value: 0 },
             { label: '16kHz', min: -12, max: 12, value: 0 }
         ];
-        const micEqContainer = document.getElementById('micEqContainer');
+        const micEqContainer = document.getElementById('micEqWrapper');
 
         micEqBands.forEach((band, i) => {
             const el = document.createElement('div');
-            el.className = 'mic-eq-band-container';
+            el.className = 'eq-band';
             el.innerHTML = `
-                <input type="range" class="mic-eq-slider" id="micEqSlider${i}" min="${band.min}" max="${band.max}" value="${band.value}" step="1">
-                <input type="number" class="mic-eq-value" id="micEqVal${i}" min="${band.min}" max="${band.max}" value="${band.value}" step="1">
-                <span class="mic-eq-label">${band.label}</span>
+                <input type="range" class="mic-eq-slider" id="micEq${i}" min="${band.min}" max="${band.max}" value="${band.value}" step="1">
+                <input type="number" class="eq-band-value" id="micEqInput${i}" min="${band.min}" max="${band.max}" value="${band.value}" step="1">
+                <span class="eq-band-label">${band.label}</span>
             `;
             micEqContainer.appendChild(el);
 
-            const slider = document.getElementById(`micEqSlider${i}`);
-            const input = document.getElementById(`micEqVal${i}`);
+            const slider = document.getElementById(`micEq${i}`);
+            const input = document.getElementById(`micEqInput${i}`);
 
             slider.addEventListener('input', () => {
                 const v = parseInt(slider.value);
@@ -515,7 +563,6 @@
             slider.addEventListener('change', () => {
                 addLog(`[麦克风] EQ ${band.label}: ${band.value}dB`);
             });
-
             input.addEventListener('input', () => {
                 let v = parseInt(input.value);
                 if (isNaN(v)) v = 0;
@@ -529,102 +576,114 @@
             });
         });
 
-        // PA 功率控制
-        const micPaSlider = document.getElementById('micPaSlider');
-        const micPaInput = document.getElementById('micPaInput');
-        const micPaVal = document.getElementById('micPaVal');
-        function syncMicPa(v) {
-            v = Math.max(0, Math.min(64, parseInt(v) || 45));
-            micPaSlider.value = v;
-            micPaInput.value = v;
-            micPaVal.textContent = v;
-        }
-        micPaSlider.addEventListener('input', () => syncMicPa(micPaSlider.value));
-        micPaSlider.addEventListener('change', () => addLog(`[麦克风] PA功率: ${micPaSlider.value}`));
-        micPaInput.addEventListener('input', () => syncMicPa(micPaInput.value));
-        micPaInput.addEventListener('change', () => addLog(`[麦克风] PA功率: ${micPaInput.value}`));
+        // MIC 回声
+        document.getElementById('micEchoToggle')?.addEventListener('change', function() {
+            addLog(`[麦克风] 回声: ${this.checked ? '开启' : '关闭'}`);
+        });
+        bindSlider('micEchoDecay', 'micEchoDecayVal');
+        bindSlider('micEchoInterval', 'micEchoIntervalVal');
 
-        // 开机默认音量控制
-        const micVolSlider = document.getElementById('micVolSlider');
-        const micVolInput = document.getElementById('micVolInput');
-        const micVolVal = document.getElementById('micVolVal');
-        function syncMicVol(v) {
-            v = Math.max(0, Math.min(15, parseInt(v) || 8));
-            micVolSlider.value = v;
-            micVolInput.value = v;
-            micVolVal.textContent = v;
-        }
-        micVolSlider.addEventListener('input', () => syncMicVol(micVolSlider.value));
-        micVolSlider.addEventListener('change', () => addLog(`[麦克风] 开机默认音量: ${micVolSlider.value}`));
-        micVolInput.addEventListener('input', () => syncMicVol(micVolInput.value));
-        micVolInput.addEventListener('change', () => addLog(`[麦克风] 开机默认音量: ${micVolInput.value}`));
+        // MIC 混响
+        document.getElementById('micReverbToggle')?.addEventListener('change', function() {
+            addLog(`[麦克风] 混响: ${this.checked ? '开启' : '关闭'}`);
+        });
+        bindSlider('micReverbSize', 'micReverbSizeVal');
+
+        // MIC 魔音
+        document.getElementById('micMagicSound')?.addEventListener('change', function() {
+            const names = ['关闭','儿童','女声','男声','电音','魔音'];
+            addLog(`[麦克风] 魔音效果: ${names[parseInt(this.value)] || this.value}`);
+        });
+
+        document.getElementById('micResetBtn')?.addEventListener('click', () => {
+            addLog(`[麦克风] 一键恢复默认 MIC 音效`);
+        });
+        document.getElementById('micSaveBtn')?.addEventListener('click', () => {
+            addLog(`[麦克风] 保存设置`);
+        });
 
         // ===== 音乐面板 =====
-        const musicPrevBtn = document.getElementById('musicPrevBtn');
-        const musicPlayBtn = document.getElementById('musicPlayBtn');
-        const musicNextBtn = document.getElementById('musicNextBtn');
-        const musicMode = document.getElementById('musicMode');
-        const musicTempo = document.getElementById('musicTempo');
-        const musicTempoVal = document.getElementById('musicTempoVal');
-        const musicIntensity = document.getElementById('musicIntensity');
-        const musicIntensityVal = document.getElementById('musicIntensityVal');
-        const musicSyncLight = document.getElementById('musicSyncLight');
-        const musicBeatBtn = document.getElementById('musicBeatBtn');
-        const musicStopBtn = document.getElementById('musicStopBtn');
-        let musicPlaying = false;
+        bindSlider('musicVol', 'musicVolVal');
+        bindSlider('musicTreble', 'musicTrebleVal');
+        bindSlider('musicMid', 'musicMidVal');
+        bindSlider('musicBass', 'musicBassVal');
 
-        function setMusicPlaying(playing, actionLabel) {
-            musicPlaying = playing;
-            musicPlayBtn.innerText = playing ? '⏸ 暂停' : '▶ 播放';
-            musicPlayBtn.classList.toggle('primary', !playing);
-            addLog(`[音乐] ${actionLabel}，状态: ${playing ? '播放中' : '已暂停'}`);
-        }
+        // 音乐 EQ 10 频点
+        const musicEqBands = [
+            { label: '31Hz',  min: -12, max: 12, value: 0 },
+            { label: '63Hz',  min: -12, max: 12, value: 0 },
+            { label: '125Hz', min: -12, max: 12, value: 0 },
+            { label: '250Hz', min: -12, max: 12, value: 0 },
+            { label: '500Hz', min: -12, max: 12, value: 0 },
+            { label: '1kHz',  min: -12, max: 12, value: 0 },
+            { label: '2kHz',  min: -12, max: 12, value: 0 },
+            { label: '4kHz',  min: -12, max: 12, value: 0 },
+            { label: '8kHz',  min: -12, max: 12, value: 0 },
+            { label: '16kHz', min: -12, max: 12, value: 0 }
+        ];
+        const musicEqContainer = document.getElementById('musicEqWrapper');
 
-        musicPlayBtn.addEventListener('click', () => {
-            setMusicPlaying(!musicPlaying, musicPlaying ? '暂停' : '播放');
+        musicEqBands.forEach((band, i) => {
+            const el = document.createElement('div');
+            el.className = 'eq-band';
+            el.innerHTML = `
+                <input type="range" class="mic-eq-slider" id="musicEq${i}" min="${band.min}" max="${band.max}" value="${band.value}" step="1">
+                <input type="number" class="eq-band-value" id="musicEqInput${i}" min="${band.min}" max="${band.max}" value="${band.value}" step="1">
+                <span class="eq-band-label">${band.label}</span>
+            `;
+            musicEqContainer.appendChild(el);
+
+            const slider = document.getElementById(`musicEq${i}`);
+            const input = document.getElementById(`musicEqInput${i}`);
+
+            slider.addEventListener('input', () => {
+                const v = parseInt(slider.value);
+                band.value = v;
+                input.value = v;
+            });
+            slider.addEventListener('change', () => {
+                addLog(`[音乐] EQ ${band.label}: ${band.value}dB`);
+            });
+            input.addEventListener('input', () => {
+                let v = parseInt(input.value);
+                if (isNaN(v)) v = 0;
+                v = Math.max(-12, Math.min(12, v));
+                band.value = v;
+                slider.value = v;
+                input.value = v;
+            });
+            input.addEventListener('change', () => {
+                addLog(`[音乐] EQ ${band.label}: ${band.value}dB`);
+            });
         });
 
-        musicPrevBtn.addEventListener('click', () => {
-            addLog('[音乐] 切换到上一首');
+        // 音乐音效
+        document.getElementById('music3dToggle')?.addEventListener('change', function() {
+            addLog(`[音乐] 3D丽音: ${this.checked ? '开启' : '关闭'}`);
         });
+        bindSlider('music3dVal', 'music3dValDisplay');
 
-        musicNextBtn.addEventListener('click', () => {
-            addLog('[音乐] 切换到下一首');
+        document.getElementById('musicVocalCutToggle')?.addEventListener('change', function() {
+            addLog(`[音乐] 人声消除: ${this.checked ? '开启' : '关闭'}`);
         });
+        bindSlider('musicVocalCutVal', 'musicVocalCutValDisplay');
 
-        musicMode.addEventListener('change', function() {
-            addLog(`[音乐] 模式切换: ${this.options[this.selectedIndex].text}`);
+        document.getElementById('musicVbToggle')?.addEventListener('change', function() {
+            addLog(`[音乐] 虚拟低音: ${this.checked ? '开启' : '关闭'}`);
         });
+        bindSlider('musicVbVal', 'musicVbValDisplay');
 
-        musicTempo.addEventListener('input', function() {
-            musicTempoVal.innerText = `${this.value}`;
+        document.getElementById('musicExciterToggle')?.addEventListener('change', function() {
+            addLog(`[音乐] 人声激励: ${this.checked ? '开启' : '关闭'}`);
         });
-        musicTempo.addEventListener('change', function() {
-            addLog(`[音乐] 速度: ${this.value} BPM`);
-        });
+        bindSlider('musicExciterVal', 'musicExciterValDisplay');
 
-        musicIntensity.addEventListener('input', function() {
-            musicIntensityVal.innerText = `${this.value}%`;
+        document.getElementById('musicResetBtn')?.addEventListener('click', () => {
+            addLog(`[音乐] 一键恢复默认 EQ 音效`);
         });
-        musicIntensity.addEventListener('change', function() {
-            addLog(`[音乐] 节奏强度: ${this.value}%`);
+        document.getElementById('musicSaveBtn')?.addEventListener('click', () => {
+            addLog(`[音乐] 保存设置`);
         });
-
-        musicSyncLight.addEventListener('change', function() {
-            addLog(`[音乐] 灯效联动: ${this.checked ? '开启' : '关闭'}`);
-        });
-
-        musicBeatBtn.addEventListener('click', () => {
-            const bpm = parseInt(musicTempo.value, 10);
-            const intensity = parseInt(musicIntensity.value, 10);
-            addLog(`[音乐] 触发节拍: BPM ${bpm}, 强度 ${intensity}%`);
-        });
-
-        musicStopBtn.addEventListener('click', () => {
-            setMusicPlaying(false, '停止');
-            addLog('[音乐] 已停止并复位到待机状态');
-        });
-
     }
 
     // 页面卸载时断开蓝牙（优雅）
