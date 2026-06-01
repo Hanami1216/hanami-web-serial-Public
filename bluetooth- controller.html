@@ -117,6 +117,77 @@
             text-align: right;
             font-family: monospace;
         }
+        .device-dashboard {
+            background: #ffffff;
+            border-color: #dbe5f0;
+            padding: 16px;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+        }
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .dashboard-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .dashboard-subtitle {
+            font-size: 0.72rem;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        .dashboard-status {
+            min-width: 112px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 7px 10px;
+            border-radius: 999px;
+            background: #f1f5f9;
+            color: #334155;
+            font-size: 0.78rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .dashboard-status .status {
+            margin-right: 0;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .metric-tile {
+            min-height: 74px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .metric-label {
+            color: #64748b;
+            font-size: 0.74rem;
+            font-weight: 600;
+        }
+        .metric-value {
+            color: #0f172a;
+            font-size: 0.92rem;
+            font-weight: 700;
+            line-height: 1.25;
+            word-break: break-word;
+        }
+        .metric-value.mono {
+            font-family: monospace;
+        }
         /* Tab 标签页样式 */
         .tab-nav {
             display: flex;
@@ -469,6 +540,25 @@
             }
             .info-row .label {
                 font-size: 0.8rem;
+            }
+            .device-dashboard {
+                padding: 12px;
+            }
+            .dashboard-header {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .dashboard-status {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            .metric-tile {
+                min-height: 66px;
             }
             .tab-nav {
                 overflow-x: auto;
@@ -888,30 +978,30 @@
         <button id="readInfoBtn" disabled>读取设备信息</button>
     </div>
 
-    <div class="info-card">
-        <div class="info-row">
-            <span class="label">蓝牙状态</span>
-            <span class="value" id="bleStatus">未初始化</span>
+    <div class="info-card device-dashboard">
+        <div class="dashboard-header">
+            <div>
+                <div class="dashboard-title">设备状态</div>
+                <div class="dashboard-subtitle">BLE 连接与基础信息</div>
+            </div>
+            <div class="dashboard-status" id="bleStatus">
+                <span class="status"></span>
+                未初始化
+            </div>
         </div>
-        <div class="info-row">
-            <span class="label">连接设备</span>
-            <span class="value" id="deviceName">—</span>
-        </div>
-        <div class="info-row">
-            <span class="label">设备ID</span>
-            <span class="value" id="deviceId">—</span>
-        </div>
-        <div class="info-row">
-            <span class="label">电池电量</span>
-            <span class="value" id="batteryLevel">—</span>
-        </div>
-        <div class="info-row">
-            <span class="label">制造商</span>
-            <span class="value" id="manufacturer">—</span>
-        </div>
-        <div class="info-row">
-            <span class="label">服务数量</span>
-            <span class="value" id="serviceCount">—</span>
+        <div class="dashboard-grid">
+            <div class="metric-tile">
+                <span class="metric-label">蓝牙名称</span>
+                <span class="metric-value" id="deviceName">—</span>
+            </div>
+            <div class="metric-tile">
+                <span class="metric-label">电量</span>
+                <span class="metric-value mono" id="batteryLevel">—</span>
+            </div>
+            <div class="metric-tile">
+                <span class="metric-label">制造商</span>
+                <span class="metric-value" id="manufacturer">—</span>
+            </div>
         </div>
     </div>
 

@@ -21,10 +21,8 @@
     const readInfoBtn = document.getElementById('readInfoBtn');
     const bleStatusSpan = document.getElementById('bleStatus');
     const deviceNameSpan = document.getElementById('deviceName');
-    const deviceIdSpan = document.getElementById('deviceId');
     const batteryLevelSpan = document.getElementById('batteryLevel');
     const manufacturerSpan = document.getElementById('manufacturer');
-    const serviceCountSpan = document.getElementById('serviceCount');
     const logPanel = document.getElementById('logPanel');
     const clearLogBtn = document.getElementById('clearLogBtn');
     const controlCard = document.getElementById('controlCard');
@@ -71,6 +69,10 @@
     function clearLog() {
         logPanel.innerHTML = '';
         addLog('日志已清空，重新记录');
+    }
+
+    function setBleStatus(text, connected = false) {
+        bleStatusSpan.innerHTML = `<span class="status${connected ? ' connected' : ''}"></span>${text}`;
     }
 
     function toByte(value, min = 0, max = 255) {
@@ -361,17 +363,15 @@
             disconnectBtn.disabled = false;
             readInfoBtn.disabled = false;
             scanBtn.disabled = false;   // 允许重新扫描，但会断开当前连接 (逻辑上建议先断开)
-            bleStatusSpan.innerHTML = '<span class="status connected"></span> 已连接';
+            setBleStatus('已连接', true);
             if(bluetoothDevice.name) deviceNameSpan.innerText = bluetoothDevice.name;
             else deviceNameSpan.innerText = bluetoothDevice.id || '未知设备';
-            deviceIdSpan.innerText = bluetoothDevice.id || '—';
         } else {
             disconnectBtn.disabled = true;
             readInfoBtn.disabled = true;
-            bleStatusSpan.innerHTML = '<span class="status"></span> 未连接 / 断开';
+            setBleStatus('未连接 / 断开');
             if(!connected && !bluetoothDevice) {
                 deviceNameSpan.innerText = '—';
-                deviceIdSpan.innerText = '—';
             }
             // 不清除设备名称保留展示最后断开设备名（可选）
         }
@@ -381,7 +381,6 @@
     function resetDeviceInfoCard() {
         batteryLevelSpan.innerText = '—';
         manufacturerSpan.innerText = '—';
-        serviceCountSpan.innerText = '—';
     }
 
     // 断开蓝牙连接
@@ -410,7 +409,6 @@
         updateUIState(false);
         resetDeviceInfoCard();
         deviceNameSpan.innerText = '—';
-        deviceIdSpan.innerText = '—';
         addLog('设备对象已清除，可重新扫描');
     }
 
@@ -488,12 +486,10 @@
         try {
             const services = await server.getPrimaryServices();
             const serviceUuids = services.map(svc => svc.uuid);
-            serviceCountSpan.innerText = `${services.length} 个`;
             addLog(`发现 ${services.length} 个主要服务: ${serviceUuids.join(', ')}`);
             return services;
         } catch(e) {
             addLog(`枚举服务失败: ${e.message}`, true);
-            serviceCountSpan.innerText = '错误';
             return [];
         }
     }
@@ -566,7 +562,7 @@
         // 检测浏览器是否支持 Web Bluetooth
         if (!navigator.bluetooth) {
             addLog(`您的浏览器不支持 Web Bluetooth API。请使用 Android Chrome/Edge 等支持 BLE 的浏览器，并确保 HTTPS 环境。`, true);
-            bleStatusSpan.innerText = '不支持';
+            setBleStatus('不支持');
             return;
         }
 
@@ -589,7 +585,6 @@
 
             addLog(`用户选择了设备: ${device.name || '无名称'} (ID: ${device.id})`);
             deviceNameSpan.innerText = device.name || '未命名设备';
-            deviceIdSpan.innerText = device.id;
 
             // 连接并初始化读取特征
             await connectAndSetup(device);
@@ -606,7 +601,6 @@
             // 重置界面状态
             if(bluetoothDevice === null) {
                 deviceNameSpan.innerText = '—';
-                deviceIdSpan.innerText = '—';
             }
             updateUIState(false);
         }
@@ -629,7 +623,6 @@
             await readBatteryLevel(gattServer);
             // 可选刷新服务数量（也可重新枚举）
             const services = await gattServer.getPrimaryServices();
-            serviceCountSpan.innerText = `${services.length} 个`;
             addLog(`当前服务数量: ${services.length}`);
         } catch (err) {
             addLog(`刷新信息失败: ${err.message}`, true);
@@ -639,16 +632,16 @@
     // 检测初始蓝牙支持状态
     function checkBluetoothSupport() {
         if (!navigator.bluetooth) {
-            bleStatusSpan.innerText = '不支持 Web Bluetooth';
+            setBleStatus('不支持 Web Bluetooth');
             addLog(`当前浏览器不支持 Web Bluetooth API。请在 Android 设备上使用 Chrome 85+ / Edge 等浏览器并确保 HTTPS 环境。`, true);
             scanBtn.disabled = false;  // 仍然可点但会报错
         } else {
-            bleStatusSpan.innerText = '支持 (等待操作)';
+            setBleStatus('支持 (等待操作)');
             addLog(`Web Bluetooth API 可用，确保蓝牙已开启。`);
             // 额外检测是否安全上下文
             if (!window.isSecureContext) {
                 addLog(`当前页面非安全上下文(非HTTPS/localhost)，蓝牙功能可能不可用！`, true);
-                bleStatusSpan.innerText = '非安全上下文';
+                setBleStatus('非安全上下文');
             } else {
                 addLog(`安全上下文验证通过`);
             }
@@ -827,12 +820,6 @@
                         const ok = await sendCommand(startCmd + i, [1]);
                         if (ok) addLog(`[${labelPrefix}] ${label}: 已选中`);
                         return;
-                    }
-
-                    const previousIndex = group.activeIndex;
-                    if (previousIndex !== null) {
-                        const offOk = await sendCommand(startCmd + previousIndex, [0]);
-                        if (!offOk) return;
                     }
 
                     const onOk = await sendCommand(startCmd + i, [1]);
