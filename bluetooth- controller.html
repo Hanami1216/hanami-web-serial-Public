@@ -854,6 +854,22 @@
             font-size: 0.82rem;
             border-radius: 12px;
         }
+        .control-card.controls-disabled {
+            opacity: 0.58;
+        }
+        .control-card.controls-disabled input,
+        .control-card.controls-disabled select,
+        .control-card.controls-disabled .mode-btn,
+        .control-card.controls-disabled .action-row button,
+        .control-card.controls-disabled .send-row button {
+            cursor: not-allowed;
+        }
+        .control-card input:disabled,
+        .control-card select:disabled,
+        .control-card button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -900,7 +916,7 @@
     </div>
 
     <!-- 控制卡片 -->
-    <div class="info-card">
+    <div class="info-card control-card controls-disabled" id="controlCard">
         <div class="tab-nav">
             <button class="tab-btn active" data-tab="text">文字</button>
             <button class="tab-btn" data-tab="light">灯光</button>
@@ -931,7 +947,7 @@
                     <span class="effect-label">单色颜色</span>
                     <div class="effect-toggle">
                         <label class="toggle-switch">
-                            <input type="checkbox" id="textColorToggle" checked>
+                            <input type="checkbox" id="textColorToggle">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -948,7 +964,7 @@
                     <span class="effect-label">渐变速度</span>
                     <div class="effect-toggle">
                         <label class="toggle-switch">
-                            <input type="checkbox" id="textGradientSpeedToggle" checked>
+                            <input type="checkbox" id="textGradientSpeedToggle">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -961,7 +977,7 @@
                     <span class="effect-label">滚动速度</span>
                     <div class="effect-toggle">
                         <label class="toggle-switch">
-                            <input type="checkbox" id="textScrollSpeedToggle" checked>
+                            <input type="checkbox" id="textScrollSpeedToggle">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -974,7 +990,7 @@
                     <span class="effect-label">亮度</span>
                     <div class="effect-toggle">
                         <label class="toggle-switch">
-                            <input type="checkbox" id="textBrightnessToggle" checked>
+                            <input type="checkbox" id="textBrightnessToggle">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -1024,7 +1040,7 @@
                     <span class="effect-label">颜色</span>
                     <div class="effect-toggle">
                         <label class="toggle-switch">
-                            <input type="checkbox" id="lightColorToggle" checked>
+                            <input type="checkbox" id="lightColorToggle">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -1041,7 +1057,7 @@
                     <span class="effect-label">亮度</span>
                     <div class="effect-toggle">
                         <label class="toggle-switch">
-                            <input type="checkbox" id="lightBrightnessToggle" checked>
+                            <input type="checkbox" id="lightBrightnessToggle">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -1054,7 +1070,7 @@
                     <span class="effect-label">速度</span>
                     <div class="effect-toggle">
                         <label class="toggle-switch">
-                            <input type="checkbox" id="lightSpeedToggle" checked>
+                            <input type="checkbox" id="lightSpeedToggle">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -1080,7 +1096,7 @@
                     <span class="effect-label">MIC 音量</span>
                     <div class="effect-toggle">
                         <label class="toggle-switch">
-                            <input type="checkbox" id="micVolToggle" checked>
+                            <input type="checkbox" id="micVolToggle">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -1110,7 +1126,7 @@
                     <span class="effect-label">MIC EQ</span>
                     <div class="effect-toggle">
                         <label class="toggle-switch">
-                            <input type="checkbox" id="micEqToggle" checked>
+                            <input type="checkbox" id="micEqToggle">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -1154,7 +1170,7 @@
                     <span class="effect-label">魔音效果</span>
                     <div class="effect-toggle">
                         <label class="toggle-switch">
-                            <input type="checkbox" id="micMagicToggle" checked>
+                            <input type="checkbox" id="micMagicToggle">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -1185,7 +1201,7 @@
                     <span class="effect-label">主音量</span>
                     <div class="effect-toggle">
                         <label class="toggle-switch">
-                            <input type="checkbox" id="musicVolToggle" checked>
+                            <input type="checkbox" id="musicVolToggle">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -1198,7 +1214,7 @@
                     <span class="effect-label">高音</span>
                     <div class="effect-toggle">
                         <label class="toggle-switch">
-                            <input type="checkbox" id="musicTrebleToggle" checked>
+                            <input type="checkbox" id="musicTrebleToggle">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -1211,7 +1227,7 @@
                     <span class="effect-label">中音</span>
                     <div class="effect-toggle">
                         <label class="toggle-switch">
-                            <input type="checkbox" id="musicMidToggle" checked>
+                            <input type="checkbox" id="musicMidToggle">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -1224,7 +1240,7 @@
                     <span class="effect-label">低音</span>
                     <div class="effect-toggle">
                         <label class="toggle-switch">
-                            <input type="checkbox" id="musicBassToggle" checked>
+                            <input type="checkbox" id="musicBassToggle">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -1241,7 +1257,7 @@
                     <span class="effect-label">音乐 EQ</span>
                     <div class="effect-toggle">
                         <label class="toggle-switch">
-                            <input type="checkbox" id="musicEqToggle" checked>
+                            <input type="checkbox" id="musicEqToggle">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>

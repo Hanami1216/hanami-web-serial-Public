@@ -27,6 +27,7 @@
     const serviceCountSpan = document.getElementById('serviceCount');
     const logPanel = document.getElementById('logPanel');
     const clearLogBtn = document.getElementById('clearLogBtn');
+    const controlCard = document.getElementById('controlCard');
 
     // 根据开关控制日志面板显示
     if (SHOW_LOG_UI) {
@@ -40,6 +41,13 @@
     let isConnected = false;
     let controlWriteChar = null;
     let controlNotifyChar = null;
+    let writeQueue = Promise.resolve();
+    let pendingSupportMapResolve = null;
+    let pendingSupportMapTimer = null;
+    let featureStateReplyCount = 0;
+    let supportedCommands = new Set();
+    const featureRegistry = new Map();
+    const modeGroups = new Map();
 
     // ---------- 辅助函数：日志 ----------
     function addLog(message, isError = false) {
@@ -104,6 +112,100 @@
         return toByte(Number(displayValue) + 12, 0, 24);
     }
 
+    function wireToDisplayDb(wireValue) {
+        return toByte(wireValue, 0, 24) - 12;
+    }
+
+    function isCommandSupported(mapBytes, cmd) {
+        const byteIndex = Math.floor(cmd / 8);
+        const bitIndex = cmd % 8;
+        return Boolean(mapBytes[byteIndex] & (1 << bitIndex));
+    }
+
+    function resetFeatureControls() {
+        document.querySelectorAll('#controlCard input[type="checkbox"]').forEach(input => {
+            input.checked = false;
+        });
+        document.querySelectorAll('#controlCard .mode-btn.active').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.dimmedOpacity) {
+                btn.style.opacity = btn.dataset.dimmedOpacity;
+            }
+        });
+        modeGroups.forEach(group => {
+            group.activeIndex = null;
+        });
+    }
+
+    function setControlPanelEnabled(enabled) {
+        controlCard?.classList.toggle('controls-disabled', !enabled);
+        featureRegistry.forEach((_, cmd) => setFeatureEnabled(cmd, false));
+        if (!enabled) {
+            supportedCommands = new Set();
+            resetFeatureControls();
+        }
+    }
+
+    function setFeatureEnabled(cmd, enabled) {
+        const feature = featureRegistry.get(cmd);
+        if (!feature) return;
+        feature.elements.forEach(el => {
+            if (el) el.disabled = !enabled;
+        });
+        feature.modeButton?.classList.toggle('disabled', !enabled);
+        if (feature.modeButton) {
+            feature.modeButton.disabled = !enabled;
+        }
+    }
+
+    function applyFeatureState(cmd, params = []) {
+        const feature = featureRegistry.get(cmd);
+        if (!feature) return;
+        featureStateReplyCount++;
+        feature.apply?.(params);
+    }
+
+    function parseSupportMap(params) {
+        supportedCommands = new Set();
+        featureRegistry.forEach((_, cmd) => {
+            if (isCommandSupported(params, cmd)) {
+                supportedCommands.add(cmd);
+            }
+        });
+        addLog(`功能表读取完成，支持 ${supportedCommands.size} 个页面功能`);
+    }
+
+    function enableSupportedFeatures() {
+        controlCard?.classList.remove('controls-disabled');
+        featureRegistry.forEach((_, cmd) => {
+            setFeatureEnabled(cmd, supportedCommands.has(cmd));
+        });
+    }
+
+    function buildSupportedMapBytes() {
+        const mapLength = 15;
+        const map = new Array(mapLength).fill(0);
+        supportedCommands.forEach(cmd => {
+            const byteIndex = Math.floor(cmd / 8);
+            const bitIndex = cmd % 8;
+            if (byteIndex < mapLength) {
+                map[byteIndex] |= (1 << bitIndex);
+            }
+        });
+        return map;
+    }
+
+    async function writeFrame(frame, cmdHex, params = []) {
+        if (controlWriteChar.properties?.write && typeof controlWriteChar.writeValueWithResponse === 'function') {
+            await controlWriteChar.writeValueWithResponse(frame);
+        } else if (controlWriteChar.properties?.writeWithoutResponse && typeof controlWriteChar.writeValueWithoutResponse === 'function') {
+            await controlWriteChar.writeValueWithoutResponse(frame);
+        } else {
+            await controlWriteChar.writeValue(frame);
+        }
+        addLog(`[发送] CMD=${cmdHex} PARAMS=[${params.join(', ')}] FRAME=${bytesToHex(frame)}`);
+    }
+
     async function sendCommand(cmd, params = []) {
         const cmdHex = `0x${toByte(cmd).toString(16).padStart(2, '0').toUpperCase()}`;
         let frame;
@@ -120,18 +222,14 @@
             return false;
         }
 
+        const task = writeQueue.then(() => writeFrame(frame, cmdHex, params));
+        writeQueue = task.catch(() => {});
+
         try {
-            if (controlWriteChar.properties?.write && typeof controlWriteChar.writeValueWithResponse === 'function') {
-                await controlWriteChar.writeValueWithResponse(frame);
-            } else if (controlWriteChar.properties?.writeWithoutResponse && typeof controlWriteChar.writeValueWithoutResponse === 'function') {
-                await controlWriteChar.writeValueWithoutResponse(frame);
-            } else {
-                await controlWriteChar.writeValue(frame);
-            }
-            addLog(`[发送] CMD=${cmdHex} PARAMS=[${params.join(', ')}] FRAME=${bytesToHex(frame)}`);
+            await task;
             return true;
         } catch (error) {
-            addLog(`[发送失败] CMD=${cmdHex} ${error.message} FRAME=${bytesToHex(frame)}`, true);
+            addLog(`[发送失败] CMD=${cmdHex} ${error.message} PARAMS=[${params.join(', ')}] FRAME=${bytesToHex(frame)}`, true);
             return false;
         }
     }
@@ -151,9 +249,20 @@
         const len = bytes[2];
         const cmd = bytes[3];
         const params = Array.from(bytes.slice(4, -1));
-        const ok = validHeader && validWebId && crcExpected === crcActual;
+        const validLen = len === bytes.length - 4;
+        const ok = validHeader && validWebId && validLen && crcExpected === crcActual;
         const cmdHex = `0x${cmd.toString(16).padStart(2, '0').toUpperCase()}`;
         addLog(`[接收${ok ? '' : '异常'}] CMD=${cmdHex} LEN=${len} PARAMS=[${params.join(', ')}] CRC=${ok ? 'OK' : `ERR(${crcExpected}/${crcActual})`} FRAME=${bytesToHex(bytes)}`, !ok);
+        if (!ok) return;
+
+        if (cmd === 0x01) {
+            parseSupportMap(params);
+            pendingSupportMapResolve?.(params);
+            pendingSupportMapResolve = null;
+            return;
+        }
+
+        applyFeatureState(cmd, params);
     }
 
     async function initControlCharacteristics(server) {
@@ -175,8 +284,74 @@
             } catch (notifyError) {
                 addLog(`控制通知特征未启用: ${notifyError.message}`, false);
             }
+            return true;
         } catch (error) {
             addLog(`控制服务/写入特征连接失败，请检查 UUID 占位常量: ${error.message}`, true);
+            return false;
+        }
+    }
+
+    function waitForSupportMap(timeoutMs = 2500) {
+        cancelSupportMapWait();
+        return new Promise((resolve, reject) => {
+            pendingSupportMapTimer = setTimeout(() => {
+                pendingSupportMapResolve = null;
+                pendingSupportMapTimer = null;
+                reject(new Error('等待功能表回复超时'));
+            }, timeoutMs);
+            pendingSupportMapResolve = params => {
+                clearTimeout(pendingSupportMapTimer);
+                pendingSupportMapTimer = null;
+                resolve(params);
+            };
+        });
+    }
+
+    function cancelSupportMapWait() {
+        if (pendingSupportMapTimer) {
+            clearTimeout(pendingSupportMapTimer);
+            pendingSupportMapTimer = null;
+        }
+        pendingSupportMapResolve = null;
+    }
+
+    async function loadSupportedFeatures() {
+        setControlPanelEnabled(false);
+        featureStateReplyCount = 0;
+        if (!controlWriteChar) {
+            addLog('功能读取失败：控制写入特征未连接', true);
+            return false;
+        }
+
+        try {
+            const supportMapPromise = waitForSupportMap();
+            const supportSent = await sendCommand(0x01, []);
+            if (!supportSent) {
+                cancelSupportMapWait();
+                throw new Error('功能表请求发送失败');
+            }
+            await supportMapPromise;
+            if (supportedCommands.size === 0) {
+                throw new Error('芯片未返回页面支持功能');
+            }
+
+            const map = buildSupportedMapBytes();
+            if (map.some(byte => byte !== 0)) {
+                const askMapSent = await sendCommand(0x04, map);
+                if (!askMapSent) throw new Error('功能状态请求发送失败');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                if (featureStateReplyCount === 0) {
+                    throw new Error('等待功能状态回复超时');
+                }
+            }
+
+            enableSupportedFeatures();
+            addLog('功能读取完成，已按支持功能恢复控制项');
+            return true;
+        } catch (error) {
+            setControlPanelEnabled(false);
+            addLog(`功能读取失败：${error.message}`, true);
+            return false;
         }
     }
 
@@ -231,6 +406,7 @@
         bluetoothDevice = null;
         controlWriteChar = null;
         controlNotifyChar = null;
+        setControlPanelEnabled(false);
         updateUIState(false);
         resetDeviceInfoCard();
         deviceNameSpan.innerText = '—';
@@ -245,6 +421,7 @@
         isConnected = false;
         controlWriteChar = null;
         controlNotifyChar = null;
+        setControlPanelEnabled(false);
         updateUIState(false);
         resetDeviceInfoCard();
         if(bluetoothDevice) {
@@ -345,7 +522,12 @@
             await enumerateServices(server);
 
             // 2. 初始化自定义控制服务/特征
-            await initControlCharacteristics(server);
+            const controlReady = await initControlCharacteristics(server);
+            if (controlReady) {
+                await loadSupportedFeatures();
+            } else {
+                setControlPanelEnabled(false);
+            }
 
             // 3. 读取设备信息服务 (制造商等)
             await readDeviceInformation(server);
@@ -364,6 +546,7 @@
             bluetoothDevice = null;
             controlWriteChar = null;
             controlNotifyChar = null;
+            setControlPanelEnabled(false);
             updateUIState(false);
             resetDeviceInfoCard();
             return false;
@@ -541,98 +724,137 @@
             const display = displayId ? document.getElementById(displayId) : null;
             if (!slider) return;
 
-            const send = () => {
+            const syncDisplay = () => {
+                if (display) display.textContent = slider.value;
+            };
+
+            const send = async () => {
+                if (slider.disabled || toggle?.disabled) return;
                 const enabled = getChecked(toggleId, true) ? 1 : 0;
                 const value = toByte(slider.value, min, max);
-                void sendCommand(cmd, [enabled, value]);
-                addLog(`[${label}] ${enabled ? '开启' : '关闭'} 值=${value}`);
+                const ok = await sendCommand(cmd, [enabled, value]);
+                if (ok) addLog(`[${label}] ${enabled ? '开启' : '关闭'} 值=${value}`);
             };
 
             slider.addEventListener('input', () => {
-                if (display) display.textContent = slider.value;
+                syncDisplay();
             });
             slider.addEventListener('change', send);
             toggle?.addEventListener('change', send);
+
+            featureRegistry.set(cmd, {
+                elements: [toggle, slider].filter(Boolean),
+                apply(params = []) {
+                    if (toggle && params.length > 0) toggle.checked = params[0] === 1;
+                    if (params.length > 1) slider.value = toByte(params[1], min, max);
+                    slider.dispatchEvent(new Event('input'));
+                    syncDisplay();
+                }
+            });
         }
 
         function bindButtonCommand(buttonId, label, cmd, params = [1]) {
-            document.getElementById(buttonId)?.addEventListener('click', () => {
-                void sendCommand(cmd, params);
-                addLog(`[${label}] 已发送`);
+            const button = document.getElementById(buttonId);
+            button?.addEventListener('click', async () => {
+                if (button.disabled) return;
+                const ok = await sendCommand(cmd, params);
+                if (ok) addLog(`[${label}] 已发送`);
             });
+
+            if (button) {
+                featureRegistry.set(cmd, {
+                    elements: [button],
+                    apply() {}
+                });
+            }
         }
 
-        function bindIndependentModes(containerId, labels, startCmd, labelPrefix, colors = null) {
-            const grid = document.getElementById(containerId);
-            if (!grid) return;
-
-            labels.forEach((label, i) => {
-                const btn = document.createElement('button');
-                btn.className = 'mode-btn';
-                btn.type = 'button';
-                btn.textContent = label;
-                btn.dataset.enabled = '0';
-                if (colors) {
-                    btn.style.background = colors[i];
-                    btn.style.color = '#fff';
-                    btn.style.borderColor = 'transparent';
-                    btn.style.opacity = '0.58';
+        function bindTextContentCommand(buttonId, inputId, cmd) {
+            const button = document.getElementById(buttonId);
+            const input = document.getElementById(inputId);
+            button?.addEventListener('click', async () => {
+                if (button.disabled || input?.disabled) return;
+                const val = input?.value.trim();
+                if (!val) return;
+                const bytes = Array.from(new TextEncoder().encode(val));
+                const ok = await sendCommand(cmd, bytes);
+                if (ok) {
+                    addLog(`[文字] 发送内容: ${val}`);
+                    input.value = '';
                 }
-                btn.addEventListener('click', () => {
-                    const enabled = btn.dataset.enabled !== '1';
-                    btn.dataset.enabled = enabled ? '1' : '0';
-                    btn.classList.toggle('active', enabled);
-                    if (colors) {
-                        btn.style.opacity = enabled ? '1' : '0.58';
-                    }
-                    void sendCommand(startCmd + i, [enabled ? 1 : 0]);
-                    addLog(`[${labelPrefix}] ${label}: ${enabled ? '开启' : '关闭'}`);
-                });
-                grid.appendChild(btn);
             });
+
+            if (button && input) {
+                featureRegistry.set(cmd, {
+                    elements: [button, input],
+                    apply() {}
+                });
+            }
         }
 
         function bindExclusiveModes(containerId, labels, startCmd, labelPrefix, colors = null) {
             const grid = document.getElementById(containerId);
             if (!grid) return;
 
-            let activeIndex = null;
+            const group = { activeIndex: null, buttons: [], colors };
+            modeGroups.set(containerId, group);
+
+            function setActive(index) {
+                group.buttons.forEach((button, i) => {
+                    const active = i === index;
+                    button.classList.toggle('active', active);
+                    if (colors) button.style.opacity = active ? '1' : '0.58';
+                });
+                group.activeIndex = index;
+            }
+
             labels.forEach((label, i) => {
                 const btn = document.createElement('button');
                 btn.className = 'mode-btn';
                 btn.type = 'button';
                 btn.textContent = label;
+                btn.dataset.cmd = String(startCmd + i);
                 if (colors) {
                     btn.style.background = colors[i];
                     btn.style.color = '#fff';
                     btn.style.borderColor = 'transparent';
                     btn.style.opacity = '0.58';
+                    btn.dataset.dimmedOpacity = '0.58';
                 }
-                btn.addEventListener('click', () => {
-                    if (activeIndex === i) {
-                        void sendCommand(startCmd + i, [1]);
-                        addLog(`[${labelPrefix}] ${label}: 已选中`);
+                btn.addEventListener('click', async () => {
+                    if (btn.disabled) return;
+                    if (group.activeIndex === i) {
+                        const ok = await sendCommand(startCmd + i, [1]);
+                        if (ok) addLog(`[${labelPrefix}] ${label}: 已选中`);
                         return;
                     }
 
-                    if (activeIndex !== null) {
-                        const prevBtn = grid.children[activeIndex];
-                        prevBtn?.classList.remove('active');
-                        if (colors && prevBtn) {
-                            prevBtn.style.opacity = '0.58';
-                        }
-                        void sendCommand(startCmd + activeIndex, [0]);
+                    const previousIndex = group.activeIndex;
+                    if (previousIndex !== null) {
+                        const offOk = await sendCommand(startCmd + previousIndex, [0]);
+                        if (!offOk) return;
                     }
 
-                    activeIndex = i;
-                    btn.classList.add('active');
-                    if (colors) {
-                        btn.style.opacity = '1';
+                    const onOk = await sendCommand(startCmd + i, [1]);
+                    if (onOk) {
+                        setActive(i);
+                        addLog(`[${labelPrefix}] ${label}: 选中`);
                     }
-                    void sendCommand(startCmd + i, [1]);
-                    addLog(`[${labelPrefix}] ${label}: 选中`);
                 });
+                group.buttons.push(btn);
                 grid.appendChild(btn);
+
+                featureRegistry.set(startCmd + i, {
+                    elements: [btn],
+                    modeButton: btn,
+                    apply(params = []) {
+                        if (params[0] === 1) {
+                            setActive(i);
+                        } else if (group.activeIndex === i) {
+                            setActive(null);
+                        }
+                    }
+                });
             });
         }
 
@@ -640,12 +862,16 @@
             const toggle = document.getElementById(toggleId);
             const container = document.getElementById(containerId);
             if (!container) return;
+            const controls = [toggle].filter(Boolean);
+            const sliders = [];
+            const inputs = [];
 
-            const send = () => {
+            const send = async () => {
+                if (toggle?.disabled || sliders.some(slider => slider.disabled)) return;
                 const enabled = getChecked(toggleId, true) ? 1 : 0;
                 const values = bands.map(band => displayToWireDb(band.value));
-                void sendCommand(cmd, [enabled, ...values]);
-                addLog(`[${label}] ${enabled ? '开启' : '关闭'} EQ=[${bands.map(b => `${b.value}dB`).join(', ')}]`);
+                const ok = await sendCommand(cmd, [enabled, ...values]);
+                if (ok) addLog(`[${label}] ${enabled ? '开启' : '关闭'} EQ=[${bands.map(b => `${b.value}dB`).join(', ')}]`);
             };
 
             toggle?.addEventListener('change', send);
@@ -661,6 +887,9 @@
 
                 const slider = document.getElementById(`${containerId}Slider${i}`);
                 const input = document.getElementById(`${containerId}Input${i}`);
+                sliders.push(slider);
+                inputs.push(input);
+                controls.push(slider, input);
                 const sync = value => {
                     let v = Number(value);
                     if (!Number.isFinite(v)) v = 0;
@@ -674,6 +903,20 @@
                 slider.addEventListener('change', send);
                 input.addEventListener('input', () => sync(input.value));
                 input.addEventListener('change', send);
+            });
+
+            featureRegistry.set(cmd, {
+                elements: controls.filter(Boolean),
+                apply(params = []) {
+                    if (toggle && params.length > 0) toggle.checked = params[0] === 1;
+                    bands.forEach((band, i) => {
+                        if (params.length <= i + 1) return;
+                        const displayValue = wireToDisplayDb(params[i + 1]);
+                        band.value = displayValue;
+                        if (sliders[i]) sliders[i].value = displayValue;
+                        if (inputs[i]) inputs[i].value = displayValue;
+                    });
+                }
             });
         }
 
@@ -691,16 +934,7 @@
         ];
 
         // ===== 文字面板 =====
-        document.getElementById('textSendBtn')?.addEventListener('click', () => {
-            const input = document.getElementById('textContent');
-            const val = input?.value.trim();
-            if (val) {
-                const bytes = Array.from(new TextEncoder().encode(val));
-                void sendCommand(0x58, bytes);
-                addLog(`[文字] 发送内容: ${val}`);
-                input.value = '';
-            }
-        });
+        bindTextContentCommand('textSendBtn', 'textContent', 0x58);
 
         const textModeLabels = ['自动切换', '文本显示', '歌词显示', '频谱0', '频谱1', '频谱2', '频谱3'];
         bindExclusiveModes('textModeGrid', textModeLabels, 0x59, '文字模式');
@@ -760,18 +994,31 @@
         bindEqControls({ label: '麦克风 EQ', cmd: 0x2B, toggleId: 'micEqToggle', containerId: 'micEqWrapper', bands: tenBandEq.map(band => ({ ...band })) });
         bindValueCommand({ label: '麦克风 回声', cmd: 0x2C, toggleId: 'micEchoToggle', sliderId: 'micEchoValue', displayId: 'micEchoValueVal', min: 0, max: 32 });
         bindValueCommand({ label: '麦克风 混响', cmd: 0x2D, toggleId: 'micReverbToggle', sliderId: 'micReverbSize', displayId: 'micReverbSizeVal', min: 0, max: 32 });
-        document.getElementById('micMagicSound')?.addEventListener('change', function() {
+        const micMagicSelect = document.getElementById('micMagicSound');
+        const micMagicToggle = document.getElementById('micMagicToggle');
+        micMagicSelect?.addEventListener('change', async function() {
+            if (this.disabled || micMagicToggle?.disabled) return;
             const enabled = getChecked('micMagicToggle', true) ? 1 : 0;
             const value = toByte(this.value, 0, 5);
             const names = ['关闭','儿童','女声','男声','电音','魔音'];
-            void sendCommand(0x2E, [enabled, value]);
-            addLog(`[麦克风] 魔音效果: ${names[parseInt(this.value)] || this.value}`);
+            const ok = await sendCommand(0x2E, [enabled, value]);
+            if (ok) addLog(`[麦克风] 魔音效果: ${names[parseInt(this.value)] || this.value}`);
         });
-        document.getElementById('micMagicToggle')?.addEventListener('change', function() {
-            const select = document.getElementById('micMagicSound');
-            const value = toByte(select?.value || 0, 0, 5);
-            void sendCommand(0x2E, [this.checked ? 1 : 0, value]);
+        micMagicToggle?.addEventListener('change', async function() {
+            if (this.disabled || micMagicSelect?.disabled) return;
+            const value = toByte(micMagicSelect?.value || 0, 0, 5);
+            const ok = await sendCommand(0x2E, [this.checked ? 1 : 0, value]);
+            if (ok) addLog(`[麦克风] 魔音效果: ${this.checked ? '开启' : '关闭'} 值=${value}`);
         });
+        if (micMagicSelect && micMagicToggle) {
+            featureRegistry.set(0x2E, {
+                elements: [micMagicSelect, micMagicToggle],
+                apply(params = []) {
+                    if (params.length > 0) micMagicToggle.checked = params[0] === 1;
+                    if (params.length > 1) micMagicSelect.value = String(toByte(params[1], 0, 5));
+                }
+            });
+        }
         bindButtonCommand('micResetBtn', '麦克风 一键恢复默认', 0x28, [1]);
         bindButtonCommand('micSaveBtn', '麦克风 保存设置', 0x37, [1]);
 
@@ -800,6 +1047,7 @@
     function init() {
         bindEvents();
         bindTabEvents();
+        setControlPanelEnabled(false);
         checkBluetoothSupport();
         updateUIState(false);
     }
