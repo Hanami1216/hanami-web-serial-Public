@@ -45,7 +45,7 @@
     function addLog(message, isError = false) {
         const logDiv = logPanel;
         const timeStr = new Date().toLocaleTimeString('zh-CN', { hour12: false });
-        const prefix = isError ? '❌' : '🔹';
+        const prefix = isError ? '[错误]' : '[信息]';
         const colorStyle = isError ? 'color: #ffaa99;' : '';
         const logMsg = `[${timeStr}] ${prefix} ${message}`;
         const logEntry = document.createElement('div');
@@ -240,7 +240,7 @@
 
     // 处理意外断开事件
     function handleDisconnection(event) {
-        addLog(`⚠️ 设备已断开连接 (意外或主动)`, true);
+        addLog(`设备已断开连接 (意外或主动)`, true);
         gattServer = null;
         isConnected = false;
         controlWriteChar = null;
@@ -339,7 +339,7 @@
             device.addEventListener('gattserverdisconnected', handleDisconnection);
 
             updateUIState(true);
-            addLog(`✅ GATT 连接成功！`);
+            addLog(`GATT 连接成功`);
 
             // 1. 枚举服务并显示数量
             await enumerateServices(server);
@@ -383,7 +383,7 @@
         // 检测浏览器是否支持 Web Bluetooth
         if (!navigator.bluetooth) {
             addLog(`您的浏览器不支持 Web Bluetooth API。请使用 Android Chrome/Edge 等支持 BLE 的浏览器，并确保 HTTPS 环境。`, true);
-            bleStatusSpan.innerText = '❌ 不支持';
+            bleStatusSpan.innerText = '不支持';
             return;
         }
 
@@ -456,18 +456,18 @@
     // 检测初始蓝牙支持状态
     function checkBluetoothSupport() {
         if (!navigator.bluetooth) {
-            bleStatusSpan.innerText = '❌ 不支持 Web Bluetooth';
-            addLog(`⚠️ 当前浏览器不支持 Web Bluetooth API。请在 Android 设备上使用 Chrome 85+ / Edge 等浏览器并确保 HTTPS 环境。`, true);
+            bleStatusSpan.innerText = '不支持 Web Bluetooth';
+            addLog(`当前浏览器不支持 Web Bluetooth API。请在 Android 设备上使用 Chrome 85+ / Edge 等浏览器并确保 HTTPS 环境。`, true);
             scanBtn.disabled = false;  // 仍然可点但会报错
         } else {
-            bleStatusSpan.innerText = '✅ 支持 (等待操作)';
-            addLog(`✅ Web Bluetooth API 可用，确保蓝牙已开启。`);
+            bleStatusSpan.innerText = '支持 (等待操作)';
+            addLog(`Web Bluetooth API 可用，确保蓝牙已开启。`);
             // 额外检测是否安全上下文
             if (!window.isSecureContext) {
-                addLog(`⚠️ 当前页面非安全上下文(非HTTPS/localhost)，蓝牙功能可能不可用！`, true);
-                bleStatusSpan.innerText = '⚠️ 非安全上下文';
+                addLog(`当前页面非安全上下文(非HTTPS/localhost)，蓝牙功能可能不可用！`, true);
+                bleStatusSpan.innerText = '非安全上下文';
             } else {
-                addLog(`🔒 安全上下文验证通过`);
+                addLog(`安全上下文验证通过`);
             }
         }
     }
@@ -592,7 +592,7 @@
             });
         }
 
-        function bindExclusiveModes(containerId, labels, startCmd, labelPrefix) {
+        function bindExclusiveModes(containerId, labels, startCmd, labelPrefix, colors = null) {
             const grid = document.getElementById(containerId);
             if (!grid) return;
 
@@ -602,6 +602,12 @@
                 btn.className = 'mode-btn';
                 btn.type = 'button';
                 btn.textContent = label;
+                if (colors) {
+                    btn.style.background = colors[i];
+                    btn.style.color = '#fff';
+                    btn.style.borderColor = 'transparent';
+                    btn.style.opacity = '0.58';
+                }
                 btn.addEventListener('click', () => {
                     if (activeIndex === i) {
                         void sendCommand(startCmd + i, [1]);
@@ -612,11 +618,17 @@
                     if (activeIndex !== null) {
                         const prevBtn = grid.children[activeIndex];
                         prevBtn?.classList.remove('active');
+                        if (colors && prevBtn) {
+                            prevBtn.style.opacity = '0.58';
+                        }
                         void sendCommand(startCmd + activeIndex, [0]);
                     }
 
                     activeIndex = i;
                     btn.classList.add('active');
+                    if (colors) {
+                        btn.style.opacity = '1';
+                    }
                     void sendCommand(startCmd + i, [1]);
                     addLog(`[${labelPrefix}] ${label}: 选中`);
                 });
@@ -720,7 +732,7 @@
             '#a855f7','#ec4899','#f43f5e','#fb923c',
             '#facc15','#4ade80','#2dd4bf','#8b5cf6'
         ];
-        bindIndependentModes('lightModeGrid', Array.from({ length: 16 }, (_, i) => `模式${i + 1}`), 0x39, '灯光模式', lightModeColors);
+        bindExclusiveModes('lightModeGrid', Array.from({ length: 16 }, (_, i) => `模式${i + 1}`), 0x39, '灯光模式', lightModeColors);
         bindValueCommand({ label: '灯光 自动模式', cmd: 0x38, toggleId: 'lightAutoToggle', sliderId: 'lightAutoParam', displayId: 'lightAutoParamVal', min: 5, max: 255 });
 
         const lightColor = document.getElementById('lightColor');
