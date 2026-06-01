@@ -929,6 +929,12 @@
                 <div class="panel-section-title">样式设置</div>
                 <div class="effect-row color-row">
                     <span class="effect-label">单色颜色</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="textColorToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                     <div class="color-preview-box" id="textColorPreview" style="background: hsl(0,100%,50%);"></div>
                 </div>
                 <div class="effect-row">
@@ -940,6 +946,12 @@
                 </div>
                 <div class="effect-row">
                     <span class="effect-label">渐变速度</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="textGradientSpeedToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                     <div class="effect-slider-wrap">
                         <input type="range" id="textGradientSpeed" min="0" max="16" value="8">
                         <span class="effect-value" id="textGradientSpeedVal">8</span>
@@ -947,6 +959,12 @@
                 </div>
                 <div class="effect-row">
                     <span class="effect-label">滚动速度</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="textScrollSpeedToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                     <div class="effect-slider-wrap">
                         <input type="range" id="textScrollSpeed" min="0" max="16" value="8">
                         <span class="effect-value" id="textScrollSpeedVal">8</span>
@@ -954,6 +972,12 @@
                 </div>
                 <div class="effect-row">
                     <span class="effect-label">亮度</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="textBrightnessToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                     <div class="effect-slider-wrap">
                         <input type="range" id="textBrightness" min="0" max="16" value="8">
                         <span class="effect-value" id="textBrightnessVal">8</span>
@@ -998,6 +1022,12 @@
                 <div class="panel-section-title">参数设置</div>
                 <div class="effect-row color-row">
                     <span class="effect-label">颜色</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="lightColorToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                     <div class="color-preview-box" id="lightColorPreview" style="background: hsl(0,100%,50%);"></div>
                 </div>
                 <div class="effect-row">
@@ -1009,6 +1039,12 @@
                 </div>
                 <div class="effect-row">
                     <span class="effect-label">亮度</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="lightBrightnessToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                     <div class="effect-slider-wrap">
                         <input type="range" id="lightBrightness" min="0" max="16" value="8">
                         <span class="effect-value" id="lightBrightnessVal">8</span>
@@ -1016,6 +1052,12 @@
                 </div>
                 <div class="effect-row">
                     <span class="effect-label">速度</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="lightSpeedToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                     <div class="effect-slider-wrap">
                         <input type="range" id="lightSpeed" min="0" max="16" value="8">
                         <span class="effect-value" id="lightSpeedVal">8</span>
@@ -1036,6 +1078,12 @@
                 <div class="panel-section-title">MIC 音量控制</div>
                 <div class="effect-row">
                     <span class="effect-label">MIC 音量</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="micVolToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                     <div class="effect-slider-wrap">
                         <input type="range" id="micVol" min="0" max="32" value="16">
                         <span class="effect-value" id="micVolVal">16</span>
@@ -1058,6 +1106,15 @@
 
             <div class="panel-section">
                 <div class="panel-section-title">均衡器 (EQ) 10 频点</div>
+                <div class="effect-row">
+                    <span class="effect-label">MIC EQ</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="micEqToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
                 <div class="eq-wrapper" id="micEqWrapper">
                     <div class="eq-db-scale">
                         <span>+12</span><span>+6</span><span>0</span><span>-6</span><span>-12</span>
@@ -1076,12 +1133,8 @@
                         </label>
                     </div>
                     <div class="effect-slider-wrap">
-                        <input type="range" id="micEchoDecay" min="0" max="32" value="0" placeholder="衰减">
-                        <span class="effect-value" id="micEchoDecayVal">0</span>
-                    </div>
-                    <div class="effect-slider-wrap">
-                        <input type="range" id="micEchoInterval" min="0" max="32" value="0" placeholder="间隔">
-                        <span class="effect-value" id="micEchoIntervalVal">0</span>
+                        <input type="range" id="micEchoValue" min="0" max="32" value="0">
+                        <span class="effect-value" id="micEchoValueVal">0</span>
                     </div>
                 </div>
                 <div class="effect-row">
@@ -1099,6 +1152,12 @@
                 </div>
                 <div class="effect-row">
                     <span class="effect-label">魔音效果</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="micMagicToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                     <select class="effect-select" id="micMagicSound">
                         <option value="0">关闭</option>
                         <option value="1">儿童</option>
@@ -1124,6 +1183,12 @@
                 <div class="panel-section-title">主音量控制</div>
                 <div class="effect-row">
                     <span class="effect-label">主音量</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="musicVolToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                     <div class="effect-slider-wrap">
                         <input type="range" id="musicVol" min="0" max="32" value="20">
                         <span class="effect-value" id="musicVolVal">20</span>
@@ -1131,6 +1196,12 @@
                 </div>
                 <div class="effect-row">
                     <span class="effect-label">高音</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="musicTrebleToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                     <div class="effect-slider-wrap">
                         <input type="range" id="musicTreble" min="0" max="32" value="16">
                         <span class="effect-value" id="musicTrebleVal">16</span>
@@ -1138,6 +1209,12 @@
                 </div>
                 <div class="effect-row">
                     <span class="effect-label">中音</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="musicMidToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                     <div class="effect-slider-wrap">
                         <input type="range" id="musicMid" min="0" max="32" value="16">
                         <span class="effect-value" id="musicMidVal">16</span>
@@ -1145,6 +1222,12 @@
                 </div>
                 <div class="effect-row">
                     <span class="effect-label">低音</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="musicBassToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                     <div class="effect-slider-wrap">
                         <input type="range" id="musicBass" min="0" max="32" value="16">
                         <span class="effect-value" id="musicBassVal">16</span>
@@ -1154,6 +1237,15 @@
 
             <div class="panel-section">
                 <div class="panel-section-title">均衡器 (EQ) 10 频点</div>
+                <div class="effect-row">
+                    <span class="effect-label">音乐 EQ</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="musicEqToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
                 <div class="eq-wrapper" id="musicEqWrapper">
                     <div class="eq-db-scale">
                         <span>+12</span><span>+6</span><span>0</span><span>-6</span><span>-12</span>
@@ -1185,7 +1277,7 @@
                         </label>
                     </div>
                     <div class="effect-slider-wrap">
-                        <input type="range" id="musicVocalCutVal" min="0" max="100" value="0">
+                        <input type="range" id="musicVocalCutVal" min="0" max="32" value="0">
                         <span class="effect-value" id="musicVocalCutValDisplay">0</span>
                     </div>
                 </div>
@@ -1198,7 +1290,7 @@
                         </label>
                     </div>
                     <div class="effect-slider-wrap">
-                        <input type="range" id="musicVbVal" min="0" max="100" value="0">
+                        <input type="range" id="musicVbVal" min="0" max="32" value="0">
                         <span class="effect-value" id="musicVbValDisplay">0</span>
                     </div>
                 </div>

@@ -3,6 +3,18 @@
     // 设为 true 可在页面上显示实时日志区域（默认隐藏，通过 F12 查看）
     const SHOW_LOG_UI = false;
 
+    // ===== BLE 控制服务 UUID 占位 =====
+    // 拿到固件真实 UUID 后只改这里。当前使用常见 FFE0/FFE1 调试占位。
+    const BLE_SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
+    const BLE_WRITE_CHARACTERISTIC_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
+    const BLE_NOTIFY_CHARACTERISTIC_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
+
+    const FrameHeader = {
+        HOST: 0xAA,
+        CHIP: 0x55
+    };
+    const WEB_ID = 0x01;
+
     // DOM 元素
     const scanBtn = document.getElementById('scanBtn');
     const disconnectBtn = document.getElementById('disconnectBtn');
@@ -26,6 +38,8 @@
     let bluetoothDevice = null;      // 当前选中的设备
     let gattServer = null;           // GATT 服务器实例
     let isConnected = false;
+    let controlWriteChar = null;
+    let controlNotifyChar = null;
 
     // ---------- 辅助函数：日志 ----------
     function addLog(message, isError = false) {
@@ -49,6 +63,121 @@
     function clearLog() {
         logPanel.innerHTML = '';
         addLog('日志已清空，重新记录');
+    }
+
+    function toByte(value, min = 0, max = 255) {
+        const n = Number(value);
+        const safe = Number.isFinite(n) ? Math.round(n) : min;
+        return Math.max(min, Math.min(max, safe)) & 0xFF;
+    }
+
+    function calculateCRC(bytes) {
+        let crc = 0;
+        for (const byte of bytes) {
+            crc += byte;
+        }
+        return crc & 0xFF;
+    }
+
+    function bytesToHex(bytes) {
+        return Array.from(bytes)
+            .map(byte => byte.toString(16).padStart(2, '0').toUpperCase())
+            .join(' ');
+    }
+
+    function buildBleFrame(cmd, params = []) {
+        const payload = Array.from(params, item => toByte(item));
+        if (payload.length > 254) {
+            throw new Error('参数过长，LEN 字段无法容纳');
+        }
+        const frame = new Uint8Array(5 + payload.length);
+        frame[0] = FrameHeader.HOST;
+        frame[1] = WEB_ID;
+        frame[2] = 1 + payload.length;
+        frame[3] = toByte(cmd);
+        frame.set(payload, 4);
+        frame[frame.length - 1] = calculateCRC(frame.slice(0, -1));
+        return frame;
+    }
+
+    function displayToWireDb(displayValue) {
+        return toByte(Number(displayValue) + 12, 0, 24);
+    }
+
+    async function sendCommand(cmd, params = []) {
+        const cmdHex = `0x${toByte(cmd).toString(16).padStart(2, '0').toUpperCase()}`;
+        let frame;
+
+        try {
+            frame = buildBleFrame(cmd, params);
+        } catch (error) {
+            addLog(`[发送失败] CMD=${cmdHex} ${error.message}`, true);
+            return false;
+        }
+
+        if (!gattServer || !gattServer.connected || !controlWriteChar) {
+            addLog(`[发送失败] 控制特征未连接 CMD=${cmdHex} PARAMS=[${params.join(', ')}] FRAME=${bytesToHex(frame)}`, true);
+            return false;
+        }
+
+        try {
+            if (controlWriteChar.properties?.write && typeof controlWriteChar.writeValueWithResponse === 'function') {
+                await controlWriteChar.writeValueWithResponse(frame);
+            } else if (controlWriteChar.properties?.writeWithoutResponse && typeof controlWriteChar.writeValueWithoutResponse === 'function') {
+                await controlWriteChar.writeValueWithoutResponse(frame);
+            } else {
+                await controlWriteChar.writeValue(frame);
+            }
+            addLog(`[发送] CMD=${cmdHex} PARAMS=[${params.join(', ')}] FRAME=${bytesToHex(frame)}`);
+            return true;
+        } catch (error) {
+            addLog(`[发送失败] CMD=${cmdHex} ${error.message} FRAME=${bytesToHex(frame)}`, true);
+            return false;
+        }
+    }
+
+    function handleControlNotify(event) {
+        const value = event.target.value;
+        const bytes = new Uint8Array(value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength));
+        if (bytes.length < 5) {
+            addLog(`[接收] 数据过短: ${bytesToHex(bytes)}`, true);
+            return;
+        }
+
+        const crcExpected = bytes[bytes.length - 1];
+        const crcActual = calculateCRC(bytes.slice(0, -1));
+        const validHeader = bytes[0] === FrameHeader.CHIP;
+        const validWebId = bytes[1] === WEB_ID;
+        const len = bytes[2];
+        const cmd = bytes[3];
+        const params = Array.from(bytes.slice(4, -1));
+        const ok = validHeader && validWebId && crcExpected === crcActual;
+        const cmdHex = `0x${cmd.toString(16).padStart(2, '0').toUpperCase()}`;
+        addLog(`[接收${ok ? '' : '异常'}] CMD=${cmdHex} LEN=${len} PARAMS=[${params.join(', ')}] CRC=${ok ? 'OK' : `ERR(${crcExpected}/${crcActual})`} FRAME=${bytesToHex(bytes)}`, !ok);
+    }
+
+    async function initControlCharacteristics(server) {
+        controlWriteChar = null;
+        controlNotifyChar = null;
+
+        try {
+            const service = await server.getPrimaryService(BLE_SERVICE_UUID);
+            controlWriteChar = await service.getCharacteristic(BLE_WRITE_CHARACTERISTIC_UUID);
+            addLog(`控制写入特征已连接: ${BLE_WRITE_CHARACTERISTIC_UUID}`);
+
+            try {
+                controlNotifyChar = await service.getCharacteristic(BLE_NOTIFY_CHARACTERISTIC_UUID);
+                if (controlNotifyChar && typeof controlNotifyChar.startNotifications === 'function') {
+                    await controlNotifyChar.startNotifications();
+                    controlNotifyChar.addEventListener('characteristicvaluechanged', handleControlNotify);
+                    addLog(`控制通知特征已启用: ${BLE_NOTIFY_CHARACTERISTIC_UUID}`);
+                }
+            } catch (notifyError) {
+                addLog(`控制通知特征未启用: ${notifyError.message}`, false);
+            }
+        } catch (error) {
+            addLog(`控制服务/写入特征连接失败，请检查 UUID 占位常量: ${error.message}`, true);
+        }
     }
 
     // 更新界面UI状态 (根据连接状态)
@@ -100,6 +229,8 @@
         gattServer = null;
         isConnected = false;
         bluetoothDevice = null;
+        controlWriteChar = null;
+        controlNotifyChar = null;
         updateUIState(false);
         resetDeviceInfoCard();
         deviceNameSpan.innerText = '—';
@@ -112,6 +243,8 @@
         addLog(`⚠️ 设备已断开连接 (意外或主动)`, true);
         gattServer = null;
         isConnected = false;
+        controlWriteChar = null;
+        controlNotifyChar = null;
         updateUIState(false);
         resetDeviceInfoCard();
         if(bluetoothDevice) {
@@ -211,10 +344,13 @@
             // 1. 枚举服务并显示数量
             await enumerateServices(server);
 
-            // 2. 读取设备信息服务 (制造商等)
+            // 2. 初始化自定义控制服务/特征
+            await initControlCharacteristics(server);
+
+            // 3. 读取设备信息服务 (制造商等)
             await readDeviceInformation(server);
 
-            // 3. 读取电池电量 (如果支持)
+            // 4. 读取电池电量 (如果支持)
             await readBatteryLevel(server);
 
             addLog(`初始化数据读取完成，可通过「读取设备信息」按钮重新获取。`);
@@ -226,6 +362,8 @@
             gattServer = null;
             isConnected = false;
             bluetoothDevice = null;
+            controlWriteChar = null;
+            controlNotifyChar = null;
             updateUIState(false);
             resetDeviceInfoCard();
             return false;
@@ -257,7 +395,8 @@
                 'device_information',      // 0x180A
                 'battery_service',         // 0x180F
                 'generic_access',          // 0x1800
-                'generic_attribute'        // 0x1801
+                'generic_attribute',       // 0x1801
+                BLE_SERVICE_UUID           // 自定义控制服务
             ];
             // 也可以额外增加一些常见服务 (心率, 骑行等便于测试, 但非必须)
             const device = await navigator.bluetooth.requestDevice({
@@ -362,7 +501,7 @@
         });
     }
 
-    // 标签页切换 & 控件日志
+    // 标签页切换 & 协议控件绑定
     function bindTabEvents() {
         const tabBtns = document.querySelectorAll('.tab-btn');
         const tabPanels = document.querySelectorAll('.tab-panel');
@@ -391,44 +530,169 @@
             slider.style.setProperty('--thumb-color', `hsl(${h},100%,50%)`);
         }
 
-        // ===== 通用: 滑块值同步 =====
-        function bindSlider(sliderId, displayId, unit = '') {
+        function getChecked(id, fallback = true) {
+            const el = document.getElementById(id);
+            return el ? el.checked : fallback;
+        }
+
+        function bindValueCommand({ label, cmd, toggleId, sliderId, displayId, min = 0, max = 255 }) {
+            const toggle = document.getElementById(toggleId);
             const slider = document.getElementById(sliderId);
-            const display = document.getElementById(displayId);
-            if (!slider || !display) return;
+            const display = displayId ? document.getElementById(displayId) : null;
+            if (!slider) return;
+
+            const send = () => {
+                const enabled = getChecked(toggleId, true) ? 1 : 0;
+                const value = toByte(slider.value, min, max);
+                void sendCommand(cmd, [enabled, value]);
+                addLog(`[${label}] ${enabled ? '开启' : '关闭'} 值=${value}`);
+            };
+
             slider.addEventListener('input', () => {
-                display.textContent = slider.value + unit;
+                if (display) display.textContent = slider.value;
+            });
+            slider.addEventListener('change', send);
+            toggle?.addEventListener('change', send);
+        }
+
+        function bindButtonCommand(buttonId, label, cmd, params = [1]) {
+            document.getElementById(buttonId)?.addEventListener('click', () => {
+                void sendCommand(cmd, params);
+                addLog(`[${label}] 已发送`);
             });
         }
+
+        function bindIndependentModes(containerId, labels, startCmd, labelPrefix, colors = null) {
+            const grid = document.getElementById(containerId);
+            if (!grid) return;
+
+            labels.forEach((label, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'mode-btn';
+                btn.type = 'button';
+                btn.textContent = label;
+                btn.dataset.enabled = '0';
+                if (colors) {
+                    btn.style.background = colors[i];
+                    btn.style.color = '#fff';
+                    btn.style.borderColor = 'transparent';
+                    btn.style.opacity = '0.58';
+                }
+                btn.addEventListener('click', () => {
+                    const enabled = btn.dataset.enabled !== '1';
+                    btn.dataset.enabled = enabled ? '1' : '0';
+                    btn.classList.toggle('active', enabled);
+                    if (colors) {
+                        btn.style.opacity = enabled ? '1' : '0.58';
+                    }
+                    void sendCommand(startCmd + i, [enabled ? 1 : 0]);
+                    addLog(`[${labelPrefix}] ${label}: ${enabled ? '开启' : '关闭'}`);
+                });
+                grid.appendChild(btn);
+            });
+        }
+
+        function bindExclusiveModes(containerId, labels, startCmd, labelPrefix) {
+            const grid = document.getElementById(containerId);
+            if (!grid) return;
+
+            let activeIndex = null;
+            labels.forEach((label, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'mode-btn';
+                btn.type = 'button';
+                btn.textContent = label;
+                btn.addEventListener('click', () => {
+                    if (activeIndex === i) {
+                        void sendCommand(startCmd + i, [1]);
+                        addLog(`[${labelPrefix}] ${label}: 已选中`);
+                        return;
+                    }
+
+                    if (activeIndex !== null) {
+                        const prevBtn = grid.children[activeIndex];
+                        prevBtn?.classList.remove('active');
+                        void sendCommand(startCmd + activeIndex, [0]);
+                    }
+
+                    activeIndex = i;
+                    btn.classList.add('active');
+                    void sendCommand(startCmd + i, [1]);
+                    addLog(`[${labelPrefix}] ${label}: 选中`);
+                });
+                grid.appendChild(btn);
+            });
+        }
+
+        function bindEqControls({ label, cmd, toggleId, containerId, bands }) {
+            const toggle = document.getElementById(toggleId);
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const send = () => {
+                const enabled = getChecked(toggleId, true) ? 1 : 0;
+                const values = bands.map(band => displayToWireDb(band.value));
+                void sendCommand(cmd, [enabled, ...values]);
+                addLog(`[${label}] ${enabled ? '开启' : '关闭'} EQ=[${bands.map(b => `${b.value}dB`).join(', ')}]`);
+            };
+
+            toggle?.addEventListener('change', send);
+            bands.forEach((band, i) => {
+                const el = document.createElement('div');
+                el.className = 'eq-band';
+                el.innerHTML = `
+                    <input type="range" class="mic-eq-slider" id="${containerId}Slider${i}" min="${band.min}" max="${band.max}" value="${band.value}" step="1">
+                    <input type="number" class="eq-band-value" id="${containerId}Input${i}" min="${band.min}" max="${band.max}" value="${band.value}" step="1">
+                    <span class="eq-band-label">${band.label}</span>
+                `;
+                container.appendChild(el);
+
+                const slider = document.getElementById(`${containerId}Slider${i}`);
+                const input = document.getElementById(`${containerId}Input${i}`);
+                const sync = value => {
+                    let v = Number(value);
+                    if (!Number.isFinite(v)) v = 0;
+                    v = Math.max(band.min, Math.min(band.max, Math.round(v)));
+                    band.value = v;
+                    slider.value = v;
+                    input.value = v;
+                };
+
+                slider.addEventListener('input', () => sync(slider.value));
+                slider.addEventListener('change', send);
+                input.addEventListener('input', () => sync(input.value));
+                input.addEventListener('change', send);
+            });
+        }
+
+        const tenBandEq = [
+            { label: '31Hz', min: -12, max: 12, value: 0 },
+            { label: '63Hz', min: -12, max: 12, value: 0 },
+            { label: '125Hz', min: -12, max: 12, value: 0 },
+            { label: '250Hz', min: -12, max: 12, value: 0 },
+            { label: '500Hz', min: -12, max: 12, value: 0 },
+            { label: '1kHz', min: -12, max: 12, value: 0 },
+            { label: '2kHz', min: -12, max: 12, value: 0 },
+            { label: '4kHz', min: -12, max: 12, value: 0 },
+            { label: '8kHz', min: -12, max: 12, value: 0 },
+            { label: '16kHz', min: -12, max: 12, value: 0 }
+        ];
 
         // ===== 文字面板 =====
         document.getElementById('textSendBtn')?.addEventListener('click', () => {
             const input = document.getElementById('textContent');
             const val = input?.value.trim();
             if (val) {
+                const bytes = Array.from(new TextEncoder().encode(val));
+                void sendCommand(0x58, bytes);
                 addLog(`[文字] 发送内容: ${val}`);
                 input.value = '';
             }
         });
 
-        // 文字：7 种显示模式
         const textModeLabels = ['自动切换', '文本显示', '歌词显示', '频谱0', '频谱1', '频谱2', '频谱3'];
-        const textModeGrid = document.getElementById('textModeGrid');
-        let selectedTextMode = null;
-        textModeLabels.forEach((label, i) => {
-            const btn = document.createElement('button');
-            btn.className = 'mode-btn';
-            btn.textContent = label;
-            btn.addEventListener('click', () => {
-                if (selectedTextMode) selectedTextMode.classList.remove('active');
-                btn.classList.add('active');
-                selectedTextMode = btn;
-                addLog(`[文字] 显示模式: ${label}`);
-            });
-            textModeGrid.appendChild(btn);
-        });
+        bindExclusiveModes('textModeGrid', textModeLabels, 0x59, '文字模式');
 
-        // 文字颜色
         const textColor = document.getElementById('textColor');
         const textColorPreview = document.getElementById('textColorPreview');
         const textColorHue = document.getElementById('textColorHue');
@@ -441,60 +705,24 @@
                 updateHueSlider(textColor);
             }
             textColor.addEventListener('input', updateTextColor);
-            textColor.addEventListener('change', function() {
-                addLog(`[文字] 单色颜色: ${this.value}`);
-            });
             updateTextColor(); // 初始化
         }
-        bindSlider('textGradientSpeed', 'textGradientSpeedVal');
-        bindSlider('textScrollSpeed', 'textScrollSpeedVal');
-        bindSlider('textBrightness', 'textBrightnessVal');
-        document.getElementById('textSaveBtn')?.addEventListener('click', () => {
-            addLog(`[文字] 保存设置`);
-        });
+        bindValueCommand({ label: '文字 单色颜色', cmd: 0x68, toggleId: 'textColorToggle', sliderId: 'textColor', displayId: null, min: 0, max: 255 });
+        bindValueCommand({ label: '文字 渐变速度', cmd: 0x69, toggleId: 'textGradientSpeedToggle', sliderId: 'textGradientSpeed', displayId: 'textGradientSpeedVal', min: 0, max: 16 });
+        bindValueCommand({ label: '文字 滚动速度', cmd: 0x6A, toggleId: 'textScrollSpeedToggle', sliderId: 'textScrollSpeed', displayId: 'textScrollSpeedVal', min: 0, max: 16 });
+        bindValueCommand({ label: '文字 亮度', cmd: 0x6B, toggleId: 'textBrightnessToggle', sliderId: 'textBrightness', displayId: 'textBrightnessVal', min: 0, max: 16 });
+        bindButtonCommand('textSaveBtn', '文字 保存设置', 0x6F, [1]);
 
         // ===== 灯光面板 =====
-        // 灯光：16 种模式
-        const lightModeGrid = document.getElementById('lightModeGrid');
-        let selectedLightMode = null;
         const lightModeColors = [
             '#ef4444','#f97316','#eab308','#22c55e',
             '#14b8a6','#06b6d4','#3b82f6','#6366f1',
             '#a855f7','#ec4899','#f43f5e','#fb923c',
             '#facc15','#4ade80','#2dd4bf','#8b5cf6'
         ];
-        for (let i = 0; i < 16; i++) {
-            const btn = document.createElement('button');
-            btn.className = 'mode-btn';
-            btn.textContent = `模式${i + 1}`;
-            btn.style.background = lightModeColors[i];
-            btn.style.color = '#fff';
-            btn.style.borderColor = 'transparent';
-            btn.addEventListener('click', () => {
-                if (selectedLightMode) {
-                    selectedLightMode.classList.remove('active');
-                    selectedLightMode.style.color = '#fff';
-                }
-                btn.classList.add('active');
-                btn.style.color = '#fff';
-                selectedLightMode = btn;
-                addLog(`[灯光] 选中模式 ${i + 1}`);
-            });
-            lightModeGrid.appendChild(btn);
-        }
+        bindIndependentModes('lightModeGrid', Array.from({ length: 16 }, (_, i) => `模式${i + 1}`), 0x39, '灯光模式', lightModeColors);
+        bindValueCommand({ label: '灯光 自动模式', cmd: 0x38, toggleId: 'lightAutoToggle', sliderId: 'lightAutoParam', displayId: 'lightAutoParamVal', min: 5, max: 255 });
 
-        // 灯光自动模式
-        document.getElementById('lightAutoToggle')?.addEventListener('change', function() {
-            addLog(`[灯光] 自动模式: ${this.checked ? '开启' : '关闭'}`);
-        });
-        document.getElementById('lightAutoParam')?.addEventListener('input', function() {
-            document.getElementById('lightAutoParamVal').textContent = this.value;
-        });
-        document.getElementById('lightAutoParam')?.addEventListener('change', function() {
-            addLog(`[灯光] 自动模式参数: ${this.value}`);
-        });
-
-        // 灯光颜色/亮度/速度
         const lightColor = document.getElementById('lightColor');
         const lightColorPreview = document.getElementById('lightColorPreview');
         const lightColorHue = document.getElementById('lightColorHue');
@@ -507,193 +735,46 @@
                 updateHueSlider(lightColor);
             }
             lightColor.addEventListener('input', updateLightColor);
-            lightColor.addEventListener('change', function() {
-                addLog(`[灯光] 颜色: ${this.value}`);
-            });
             updateLightColor(); // 初始化
         }
-        bindSlider('lightBrightness', 'lightBrightnessVal');
-        bindSlider('lightSpeed', 'lightSpeedVal');
-        document.getElementById('lightSaveBtn')?.addEventListener('click', () => {
-            addLog(`[灯光] 保存设置`);
-        });
+        bindValueCommand({ label: '灯光 颜色', cmd: 0x50, toggleId: 'lightColorToggle', sliderId: 'lightColor', displayId: null, min: 0, max: 255 });
+        bindValueCommand({ label: '灯光 亮度', cmd: 0x51, toggleId: 'lightBrightnessToggle', sliderId: 'lightBrightness', displayId: 'lightBrightnessVal', min: 0, max: 16 });
+        bindValueCommand({ label: '灯光 速度', cmd: 0x52, toggleId: 'lightSpeedToggle', sliderId: 'lightSpeed', displayId: 'lightSpeedVal', min: 0, max: 16 });
+        bindButtonCommand('lightSaveBtn', '灯光 保存设置', 0x57, [1]);
 
         // ===== 麦克风面板 =====
-        bindSlider('micVol', 'micVolVal');
-
-        // MIC 优先
-        document.getElementById('micPriorityToggle')?.addEventListener('change', function() {
-            addLog(`[麦克风] MIC优先: ${this.checked ? '开启' : '关闭'}`);
-        });
-        document.getElementById('micPriorityVal')?.addEventListener('input', function() {
-            document.getElementById('micPriorityValDisplay').textContent = this.value;
-        });
-        document.getElementById('micPriorityVal')?.addEventListener('change', function() {
-            addLog(`[麦克风] MIC优先值: ${this.value}`);
-        });
-
-        // MIC EQ 10 频点
-        const micEqBands = [
-            { label: '25Hz',  min: -12, max: 12, value: 0 },
-            { label: '40Hz',  min: -12, max: 12, value: 0 },
-            { label: '63Hz',  min: -12, max: 12, value: 0 },
-            { label: '100Hz', min: -12, max: 12, value: 0 },
-            { label: '160Hz', min: -12, max: 12, value: 0 },
-            { label: '250Hz', min: -12, max: 12, value: 0 },
-            { label: '400Hz', min: -12, max: 12, value: 0 },
-            { label: '630Hz', min: -12, max: 12, value: 0 },
-            { label: '1kHz',  min: -12, max: 12, value: 0 },
-            { label: '1.6kHz',min: -12, max: 12, value: 0 },
-            { label: '2.5kHz',min: -12, max: 12, value: 0 },
-            { label: '4KHz',  min: -12, max: 12, value: 0 },
-            { label: '6.3KHz',min: -12, max: 12, value: 0 },
-            { label: '10KHz', min: -12, max: 12, value: 0 },
-            { label: '16kHz', min: -12, max: 12, value: 0 }
-        ];
-        const micEqContainer = document.getElementById('micEqWrapper');
-
-        micEqBands.forEach((band, i) => {
-            const el = document.createElement('div');
-            el.className = 'eq-band';
-            el.innerHTML = `
-                <input type="range" class="mic-eq-slider" id="micEq${i}" min="${band.min}" max="${band.max}" value="${band.value}" step="1">
-                <input type="number" class="eq-band-value" id="micEqInput${i}" min="${band.min}" max="${band.max}" value="${band.value}" step="1">
-                <span class="eq-band-label">${band.label}</span>
-            `;
-            micEqContainer.appendChild(el);
-
-            const slider = document.getElementById(`micEq${i}`);
-            const input = document.getElementById(`micEqInput${i}`);
-
-            slider.addEventListener('input', () => {
-                const v = parseInt(slider.value);
-                band.value = v;
-                input.value = v;
-            });
-            slider.addEventListener('change', () => {
-                addLog(`[麦克风] EQ ${band.label}: ${band.value}dB`);
-            });
-            input.addEventListener('input', () => {
-                let v = parseInt(input.value);
-                if (isNaN(v)) v = 0;
-                v = Math.max(-12, Math.min(12, v));
-                band.value = v;
-                slider.value = v;
-                input.value = v;
-            });
-            input.addEventListener('change', () => {
-                addLog(`[麦克风] EQ ${band.label}: ${band.value}dB`);
-            });
-        });
-
-        // MIC 回声
-        document.getElementById('micEchoToggle')?.addEventListener('change', function() {
-            addLog(`[麦克风] 回声: ${this.checked ? '开启' : '关闭'}`);
-        });
-        bindSlider('micEchoDecay', 'micEchoDecayVal');
-        bindSlider('micEchoInterval', 'micEchoIntervalVal');
-
-        // MIC 混响
-        document.getElementById('micReverbToggle')?.addEventListener('change', function() {
-            addLog(`[麦克风] 混响: ${this.checked ? '开启' : '关闭'}`);
-        });
-        bindSlider('micReverbSize', 'micReverbSizeVal');
-
-        // MIC 魔音
+        bindValueCommand({ label: '麦克风 MIC音量', cmd: 0x29, toggleId: 'micVolToggle', sliderId: 'micVol', displayId: 'micVolVal', min: 0, max: 32 });
+        bindValueCommand({ label: '麦克风 MIC优先', cmd: 0x2A, toggleId: 'micPriorityToggle', sliderId: 'micPriorityVal', displayId: 'micPriorityValDisplay', min: 0, max: 32 });
+        bindEqControls({ label: '麦克风 EQ', cmd: 0x2B, toggleId: 'micEqToggle', containerId: 'micEqWrapper', bands: tenBandEq.map(band => ({ ...band })) });
+        bindValueCommand({ label: '麦克风 回声', cmd: 0x2C, toggleId: 'micEchoToggle', sliderId: 'micEchoValue', displayId: 'micEchoValueVal', min: 0, max: 32 });
+        bindValueCommand({ label: '麦克风 混响', cmd: 0x2D, toggleId: 'micReverbToggle', sliderId: 'micReverbSize', displayId: 'micReverbSizeVal', min: 0, max: 32 });
         document.getElementById('micMagicSound')?.addEventListener('change', function() {
+            const enabled = getChecked('micMagicToggle', true) ? 1 : 0;
+            const value = toByte(this.value, 0, 5);
             const names = ['关闭','儿童','女声','男声','电音','魔音'];
+            void sendCommand(0x2E, [enabled, value]);
             addLog(`[麦克风] 魔音效果: ${names[parseInt(this.value)] || this.value}`);
         });
-
-        document.getElementById('micResetBtn')?.addEventListener('click', () => {
-            addLog(`[麦克风] 一键恢复默认 MIC 音效`);
+        document.getElementById('micMagicToggle')?.addEventListener('change', function() {
+            const select = document.getElementById('micMagicSound');
+            const value = toByte(select?.value || 0, 0, 5);
+            void sendCommand(0x2E, [this.checked ? 1 : 0, value]);
         });
-        document.getElementById('micSaveBtn')?.addEventListener('click', () => {
-            addLog(`[麦克风] 保存设置`);
-        });
+        bindButtonCommand('micResetBtn', '麦克风 一键恢复默认', 0x28, [1]);
+        bindButtonCommand('micSaveBtn', '麦克风 保存设置', 0x37, [1]);
 
         // ===== 音乐面板 =====
-        bindSlider('musicVol', 'musicVolVal');
-        bindSlider('musicTreble', 'musicTrebleVal');
-        bindSlider('musicMid', 'musicMidVal');
-        bindSlider('musicBass', 'musicBassVal');
-
-        // 音乐 EQ 10 频点
-        const musicEqBands = [
-            { label: '31Hz',  min: -12, max: 12, value: 0 },
-            { label: '63Hz',  min: -12, max: 12, value: 0 },
-            { label: '125Hz', min: -12, max: 12, value: 0 },
-            { label: '250Hz', min: -12, max: 12, value: 0 },
-            { label: '500Hz', min: -12, max: 12, value: 0 },
-            { label: '1kHz',  min: -12, max: 12, value: 0 },
-            { label: '2kHz',  min: -12, max: 12, value: 0 },
-            { label: '4kHz',  min: -12, max: 12, value: 0 },
-            { label: '8kHz',  min: -12, max: 12, value: 0 },
-            { label: '16kHz', min: -12, max: 12, value: 0 }
-        ];
-        const musicEqContainer = document.getElementById('musicEqWrapper');
-
-        musicEqBands.forEach((band, i) => {
-            const el = document.createElement('div');
-            el.className = 'eq-band';
-            el.innerHTML = `
-                <input type="range" class="mic-eq-slider" id="musicEq${i}" min="${band.min}" max="${band.max}" value="${band.value}" step="1">
-                <input type="number" class="eq-band-value" id="musicEqInput${i}" min="${band.min}" max="${band.max}" value="${band.value}" step="1">
-                <span class="eq-band-label">${band.label}</span>
-            `;
-            musicEqContainer.appendChild(el);
-
-            const slider = document.getElementById(`musicEq${i}`);
-            const input = document.getElementById(`musicEqInput${i}`);
-
-            slider.addEventListener('input', () => {
-                const v = parseInt(slider.value);
-                band.value = v;
-                input.value = v;
-            });
-            slider.addEventListener('change', () => {
-                addLog(`[音乐] EQ ${band.label}: ${band.value}dB`);
-            });
-            input.addEventListener('input', () => {
-                let v = parseInt(input.value);
-                if (isNaN(v)) v = 0;
-                v = Math.max(-12, Math.min(12, v));
-                band.value = v;
-                slider.value = v;
-                input.value = v;
-            });
-            input.addEventListener('change', () => {
-                addLog(`[音乐] EQ ${band.label}: ${band.value}dB`);
-            });
-        });
-
-        // 音乐音效
-        document.getElementById('music3dToggle')?.addEventListener('change', function() {
-            addLog(`[音乐] 3D丽音: ${this.checked ? '开启' : '关闭'}`);
-        });
-        bindSlider('music3dVal', 'music3dValDisplay');
-
-        document.getElementById('musicVocalCutToggle')?.addEventListener('change', function() {
-            addLog(`[音乐] 人声消除: ${this.checked ? '开启' : '关闭'}`);
-        });
-        bindSlider('musicVocalCutVal', 'musicVocalCutValDisplay');
-
-        document.getElementById('musicVbToggle')?.addEventListener('change', function() {
-            addLog(`[音乐] 虚拟低音: ${this.checked ? '开启' : '关闭'}`);
-        });
-        bindSlider('musicVbVal', 'musicVbValDisplay');
-
-        document.getElementById('musicExciterToggle')?.addEventListener('change', function() {
-            addLog(`[音乐] 人声激励: ${this.checked ? '开启' : '关闭'}`);
-        });
-        bindSlider('musicExciterVal', 'musicExciterValDisplay');
-
-        document.getElementById('musicResetBtn')?.addEventListener('click', () => {
-            addLog(`[音乐] 一键恢复默认 EQ 音效`);
-        });
-        document.getElementById('musicSaveBtn')?.addEventListener('click', () => {
-            addLog(`[音乐] 保存设置`);
-        });
+        bindValueCommand({ label: '音乐 主音量', cmd: 0x11, toggleId: 'musicVolToggle', sliderId: 'musicVol', displayId: 'musicVolVal', min: 0, max: 32 });
+        bindValueCommand({ label: '音乐 高音', cmd: 0x12, toggleId: 'musicTrebleToggle', sliderId: 'musicTreble', displayId: 'musicTrebleVal', min: 0, max: 32 });
+        bindValueCommand({ label: '音乐 中音', cmd: 0x13, toggleId: 'musicMidToggle', sliderId: 'musicMid', displayId: 'musicMidVal', min: 0, max: 32 });
+        bindValueCommand({ label: '音乐 低音', cmd: 0x14, toggleId: 'musicBassToggle', sliderId: 'musicBass', displayId: 'musicBassVal', min: 0, max: 32 });
+        bindEqControls({ label: '音乐 EQ', cmd: 0x15, toggleId: 'musicEqToggle', containerId: 'musicEqWrapper', bands: tenBandEq.map(band => ({ ...band })) });
+        bindValueCommand({ label: '音乐 3D丽音', cmd: 0x18, toggleId: 'music3dToggle', sliderId: 'music3dVal', displayId: 'music3dValDisplay', min: 0, max: 32 });
+        bindValueCommand({ label: '音乐 人声消除', cmd: 0x19, toggleId: 'musicVocalCutToggle', sliderId: 'musicVocalCutVal', displayId: 'musicVocalCutValDisplay', min: 0, max: 32 });
+        bindValueCommand({ label: '音乐 虚拟低音', cmd: 0x1A, toggleId: 'musicVbToggle', sliderId: 'musicVbVal', displayId: 'musicVbValDisplay', min: 0, max: 32 });
+        bindValueCommand({ label: '音乐 人声激励', cmd: 0x1B, toggleId: 'musicExciterToggle', sliderId: 'musicExciterVal', displayId: 'musicExciterValDisplay', min: 0, max: 32 });
+        bindButtonCommand('musicResetBtn', '音乐 一键恢复默认', 0x10, [1]);
+        bindButtonCommand('musicSaveBtn', '音乐 保存设置', 0x27, [1]);
     }
 
     // 页面卸载时断开蓝牙（优雅）
