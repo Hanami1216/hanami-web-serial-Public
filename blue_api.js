@@ -3,11 +3,12 @@
     // 设为 true 可在页面上显示实时日志区域（默认隐藏，通过 F12 查看）
     const SHOW_LOG_UI = false;
 
-    // ===== BLE 控制服务 UUID 占位 =====
-    // 拿到固件真实 UUID 后只改这里。当前使用常见 FFE0/FFE1 调试占位。
-    const BLE_SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
-    const BLE_WRITE_CHARACTERISTIC_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
-    const BLE_NOTIFY_CHARACTERISTIC_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
+    // ===== BLE 控制服务 UUID（正式硬件） =====
+    // 适用机型：A6L、A6D、A8D
+    // 服务: AF00 (PRIMARY_SERVICE)  |  写特征: AF01 (WRITE)  |  通知特征: AF02 (NOTIFY)
+    const BLE_SERVICE_UUID = '0000af00-0000-1000-8000-00805f9b34fb';
+    const BLE_WRITE_CHARACTERISTIC_UUID = '0000af01-0000-1000-8000-00805f9b34fb';
+    const BLE_NOTIFY_CHARACTERISTIC_UUID = '0000af02-0000-1000-8000-00805f9b34fb';
 
     const FrameHeader = {
         HOST: 0xAA,
