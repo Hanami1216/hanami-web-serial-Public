@@ -16,6 +16,96 @@
     };
     const WEB_ID = 0x01;
 
+    // ===== 命令枚举（匹配固件 BLE_msg_type） =====
+    const CMD = {
+        // === Map Byte 0: 系统功能 ===
+        SYS_ASK: 0x00,               // 【未在 Web UI 中实现】
+        SYS_CHIP_SUPPORT_MAP: 0x01,  // 握手/支持映射请求
+        SYS_ASK_ALL: 0x02,           // 【未在 Web UI 中实现】
+        SYS_ASK_CMD: 0x03,           // 【未在 Web UI 中实现】
+        SYS_ASK_MAP: 0x04,           // Bit-map 功能请求
+        SYS_ASK_BAT: 0x05,           // 【未在 Web UI 中实现】
+        SYS_ASK_MCU_ID: 0x06,        // 【未在 Web UI 中实现】
+        SYS_ASK_MID: 0x07,           // 【未在 Web UI 中实现】
+
+        // === Map Byte 1: 系统保留 ===
+        // 0x08-0x0F: 预留，未使用
+
+        // === Map Byte 2: 音效功能 0（音乐 EQ） ===
+        EQ_VOL_RESET: 0x10,
+        EQ_VOL_VAL: 0x11,
+        EQ_VOL_TRE: 0x12,
+        EQ_VOL_MID: 0x13,
+        EQ_VOL_BASS: 0x14,
+        EQ_VOL_FRE_VAL: 0x15,
+        // 0x16-0x17: 未使用
+
+        // === Map Byte 3: 音效功能 1（音效增强） ===
+        EQ_VOL_3D: 0x18,
+        EQ_Voice_Cut: 0x19,
+        EQ_VOL_VB: 0x1A,
+        EQ_Voice_EXCITER: 0x1B,
+        // 0x1C-0x1F: 未使用
+
+        // === Map Byte 4: 音效功能 2（播放控制） ===
+        EQ_VOL_PAUSE: 0x20,          // 【未在 Web UI 中实现】
+        EQ_VOL_PREV: 0x21,           // 【未在 Web UI 中实现】
+        EQ_VOL_NEXT: 0x22,           // 【未在 Web UI 中实现】
+        EQ_VOL_MODE: 0x23,           // 【未在 Web UI 中实现】
+        EQ_VOL_PLAY_MODE: 0x24,      // 【未在 Web UI 中实现】
+        // 0x25-0x26: 未使用
+        EQ_VOL_SAVE: 0x27,
+
+        // === Map Byte 5: MIC 功能 3 ===
+        EQ_MIC_RESET: 0x28,
+        EQ_MIC_VAL: 0x29,
+        EQ_MIC_priority: 0x2A,
+        EQ_MIC_FRE_VAL: 0x2B,
+        EQ_MIC_ECHO: 0x2C,
+        EQ_MIC_REVERB: 0x2D,
+        EQ_MIC_Magic_Sound: 0x2E,
+        // 0x2F: 未使用
+
+        // === Map Byte 6: MIC 功能 4 ===
+        // 0x30-0x36: 未使用
+        EQ_MIC_SAVE: 0x37,
+
+        // === Map Byte 7: 灯光功能 0 ===
+        LIGHT_AUTO_EN: 0x38,
+        LIGHT_MODE_0: 0x39,          // 0x3A-0x3F 为 MODE_1-6（通过 startCmd+i 计算）
+        // 0x3A-0x3F: 见 LIGHT_MODE_0
+
+        // === Map Byte 8: 灯光功能 1 ===
+        // 0x40-0x47: LIGHT_MODE_7-14（通过 startCmd+i 计算），见 LIGHT_MODE_0
+
+        // === Map Byte 9: 灯光功能 2 ===
+        // 0x48: LIGHT_MODE_15（通过 startCmd+i 计算），见 LIGHT_MODE_0
+        // 0x49-0x4F: 未使用
+
+        // === Map Byte 10: 灯光功能 3（参数控制） ===
+        LIGHT_COLOR_SET: 0x50,
+        LIGHT_VAL_SET: 0x51,
+        LIGHT_SPEED_SET: 0x52,
+        // 0x53-0x56: 未使用
+        LIGHT_SAVE: 0x57,
+
+        // === Map Byte 11: 文字功能 0（显示模式） ===
+        TEXT_Content: 0x58,
+        TEXT_MODE_0: 0x59,           // 0x5A-0x5F 为 MODE_1-6（通过 startCmd+i 计算）
+        // 0x5A-0x5F: 见 TEXT_MODE_0
+
+        // === Map Byte 12: 文字功能 1 ===
+        // 0x60-0x67: 预留，未使用
+
+        // === Map Byte 13: 文字功能 2（样式参数） ===
+        TEXT_COLOR_ONE: 0x68,
+        TEXT_COLOR_AUTO_Speed: 0x69,
+        TEXT_Scroll_Speed: 0x6A,
+        TEXT_LIGHT: 0x6B,
+        // 0x6C-0x6E: 未使用
+        TEXT_SAVE: 0x6F,
+    };
+
     // DOM 元素
     const scanBtn = document.getElementById('scanBtn');
     const disconnectBtn = document.getElementById('disconnectBtn');
@@ -258,7 +348,7 @@
         addLog(`[接收${ok ? '' : '异常'}] CMD=${cmdHex} LEN=${len} PARAMS=[${params.join(', ')}] CRC=${ok ? 'OK' : `ERR(${crcExpected}/${crcActual})`} FRAME=${bytesToHex(bytes)}`, !ok);
         if (!ok) return;
 
-        if (cmd === 0x01) {
+        if (cmd === CMD.SYS_CHIP_SUPPORT_MAP) {
             parseSupportMap(params);
             pendingSupportMapResolve?.(params);
             pendingSupportMapResolve = null;
@@ -328,7 +418,7 @@
 
         try {
             const supportMapPromise = waitForSupportMap();
-            const supportSent = await sendCommand(0x01, []);
+            const supportSent = await sendCommand(CMD.SYS_CHIP_SUPPORT_MAP, []);
             if (!supportSent) {
                 cancelSupportMapWait();
                 throw new Error('功能表请求发送失败');
@@ -340,7 +430,7 @@
 
             const map = buildSupportedMapBytes();
             if (map.some(byte => byte !== 0)) {
-                const askMapSent = await sendCommand(0x04, map);
+                const askMapSent = await sendCommand(CMD.SYS_ASK_MAP, map);
                 if (!askMapSent) throw new Error('功能状态请求发送失败');
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 if (featureStateReplyCount === 0) {
@@ -922,10 +1012,10 @@
         ];
 
         // ===== 文字面板 =====
-        bindTextContentCommand('textSendBtn', 'textContent', 0x58);
+        bindTextContentCommand('textSendBtn', 'textContent', CMD.TEXT_Content);
 
         const textModeLabels = ['自动切换', '文本显示', '歌词显示', '频谱0', '频谱1', '频谱2', '频谱3'];
-        bindExclusiveModes('textModeGrid', textModeLabels, 0x59, '文字模式');
+        bindExclusiveModes('textModeGrid', textModeLabels, CMD.TEXT_MODE_0, '文字模式');
 
         const textColor = document.getElementById('textColor');
         const textColorPreview = document.getElementById('textColorPreview');
@@ -941,11 +1031,11 @@
             textColor.addEventListener('input', updateTextColor);
             updateTextColor(); // 初始化
         }
-        bindValueCommand({ label: '文字 单色颜色', cmd: 0x68, toggleId: 'textColorToggle', sliderId: 'textColor', displayId: null, min: 0, max: 255 });
-        bindValueCommand({ label: '文字 渐变速度', cmd: 0x69, toggleId: 'textGradientSpeedToggle', sliderId: 'textGradientSpeed', displayId: 'textGradientSpeedVal', min: 0, max: 16 });
-        bindValueCommand({ label: '文字 滚动速度', cmd: 0x6A, toggleId: 'textScrollSpeedToggle', sliderId: 'textScrollSpeed', displayId: 'textScrollSpeedVal', min: 0, max: 16 });
-        bindValueCommand({ label: '文字 亮度', cmd: 0x6B, toggleId: 'textBrightnessToggle', sliderId: 'textBrightness', displayId: 'textBrightnessVal', min: 0, max: 16 });
-        bindButtonCommand('textSaveBtn', '文字 保存设置', 0x6F, [1]);
+        bindValueCommand({ label: '文字 单色颜色', cmd: CMD.TEXT_COLOR_ONE, toggleId: 'textColorToggle', sliderId: 'textColor', displayId: null, min: 0, max: 255 });
+        bindValueCommand({ label: '文字 渐变速度', cmd: CMD.TEXT_COLOR_AUTO_Speed, toggleId: 'textGradientSpeedToggle', sliderId: 'textGradientSpeed', displayId: 'textGradientSpeedVal', min: 0, max: 16 });
+        bindValueCommand({ label: '文字 滚动速度', cmd: CMD.TEXT_Scroll_Speed, toggleId: 'textScrollSpeedToggle', sliderId: 'textScrollSpeed', displayId: 'textScrollSpeedVal', min: 0, max: 16 });
+        bindValueCommand({ label: '文字 亮度', cmd: CMD.TEXT_LIGHT, toggleId: 'textBrightnessToggle', sliderId: 'textBrightness', displayId: 'textBrightnessVal', min: 0, max: 16 });
+        bindButtonCommand('textSaveBtn', '文字 保存设置', CMD.TEXT_SAVE, [1]);
 
         // ===== 灯光面板 =====
         const lightModeColors = [
@@ -954,8 +1044,8 @@
             '#a855f7','#ec4899','#f43f5e','#fb923c',
             '#facc15','#4ade80','#2dd4bf','#8b5cf6'
         ];
-        bindExclusiveModes('lightModeGrid', Array.from({ length: 16 }, (_, i) => `模式${i + 1}`), 0x39, '灯光模式', lightModeColors);
-        bindValueCommand({ label: '灯光 自动模式', cmd: 0x38, toggleId: 'lightAutoToggle', sliderId: 'lightAutoParam', displayId: 'lightAutoParamVal', min: 5, max: 255 });
+        bindExclusiveModes('lightModeGrid', Array.from({ length: 16 }, (_, i) => `模式${i + 1}`), CMD.LIGHT_MODE_0, '灯光模式', lightModeColors);
+        bindValueCommand({ label: '灯光 自动模式', cmd: CMD.LIGHT_AUTO_EN, toggleId: 'lightAutoToggle', sliderId: 'lightAutoParam', displayId: 'lightAutoParamVal', min: 5, max: 255 });
 
         const lightColor = document.getElementById('lightColor');
         const lightColorPreview = document.getElementById('lightColorPreview');
@@ -971,17 +1061,17 @@
             lightColor.addEventListener('input', updateLightColor);
             updateLightColor(); // 初始化
         }
-        bindValueCommand({ label: '灯光 颜色', cmd: 0x50, toggleId: 'lightColorToggle', sliderId: 'lightColor', displayId: null, min: 0, max: 255 });
-        bindValueCommand({ label: '灯光 亮度', cmd: 0x51, toggleId: 'lightBrightnessToggle', sliderId: 'lightBrightness', displayId: 'lightBrightnessVal', min: 0, max: 16 });
-        bindValueCommand({ label: '灯光 速度', cmd: 0x52, toggleId: 'lightSpeedToggle', sliderId: 'lightSpeed', displayId: 'lightSpeedVal', min: 0, max: 16 });
-        bindButtonCommand('lightSaveBtn', '灯光 保存设置', 0x57, [1]);
+        bindValueCommand({ label: '灯光 颜色', cmd: CMD.LIGHT_COLOR_SET, toggleId: 'lightColorToggle', sliderId: 'lightColor', displayId: null, min: 0, max: 255 });
+        bindValueCommand({ label: '灯光 亮度', cmd: CMD.LIGHT_VAL_SET, toggleId: 'lightBrightnessToggle', sliderId: 'lightBrightness', displayId: 'lightBrightnessVal', min: 0, max: 16 });
+        bindValueCommand({ label: '灯光 速度', cmd: CMD.LIGHT_SPEED_SET, toggleId: 'lightSpeedToggle', sliderId: 'lightSpeed', displayId: 'lightSpeedVal', min: 0, max: 16 });
+        bindButtonCommand('lightSaveBtn', '灯光 保存设置', CMD.LIGHT_SAVE, [1]);
 
         // ===== 麦克风面板 =====
-        bindValueCommand({ label: '麦克风 MIC音量', cmd: 0x29, toggleId: 'micVolToggle', sliderId: 'micVol', displayId: 'micVolVal', min: 0, max: 32 });
-        bindValueCommand({ label: '麦克风 MIC优先', cmd: 0x2A, toggleId: 'micPriorityToggle', sliderId: 'micPriorityVal', displayId: 'micPriorityValDisplay', min: 0, max: 32 });
-        bindEqControls({ label: '麦克风 EQ', cmd: 0x2B, toggleId: 'micEqToggle', containerId: 'micEqWrapper', bands: tenBandEq.map(band => ({ ...band })) });
-        bindValueCommand({ label: '麦克风 回声', cmd: 0x2C, toggleId: 'micEchoToggle', sliderId: 'micEchoValue', displayId: 'micEchoValueVal', min: 0, max: 32 });
-        bindValueCommand({ label: '麦克风 混响', cmd: 0x2D, toggleId: 'micReverbToggle', sliderId: 'micReverbSize', displayId: 'micReverbSizeVal', min: 0, max: 32 });
+        bindValueCommand({ label: '麦克风 MIC音量', cmd: CMD.EQ_MIC_VAL, toggleId: 'micVolToggle', sliderId: 'micVol', displayId: 'micVolVal', min: 0, max: 32 });
+        bindValueCommand({ label: '麦克风 MIC优先', cmd: CMD.EQ_MIC_priority, toggleId: 'micPriorityToggle', sliderId: 'micPriorityVal', displayId: 'micPriorityValDisplay', min: 0, max: 32 });
+        bindEqControls({ label: '麦克风 EQ', cmd: CMD.EQ_MIC_FRE_VAL, toggleId: 'micEqToggle', containerId: 'micEqWrapper', bands: tenBandEq.map(band => ({ ...band })) });
+        bindValueCommand({ label: '麦克风 回声', cmd: CMD.EQ_MIC_ECHO, toggleId: 'micEchoToggle', sliderId: 'micEchoValue', displayId: 'micEchoValueVal', min: 0, max: 32 });
+        bindValueCommand({ label: '麦克风 混响', cmd: CMD.EQ_MIC_REVERB, toggleId: 'micReverbToggle', sliderId: 'micReverbSize', displayId: 'micReverbSizeVal', min: 0, max: 32 });
         const micMagicSelect = document.getElementById('micMagicSound');
         const micMagicToggle = document.getElementById('micMagicToggle');
         micMagicSelect?.addEventListener('change', async function() {
@@ -989,17 +1079,17 @@
             const enabled = getChecked('micMagicToggle', true) ? 1 : 0;
             const value = toByte(this.value, 0, 5);
             const names = ['关闭','儿童','女声','男声','电音','魔音'];
-            const ok = await sendCommand(0x2E, [enabled, value]);
+            const ok = await sendCommand(CMD.EQ_MIC_Magic_Sound, [enabled, value]);
             if (ok) addLog(`[麦克风] 魔音效果: ${names[parseInt(this.value)] || this.value}`);
         });
         micMagicToggle?.addEventListener('change', async function() {
             if (this.disabled || micMagicSelect?.disabled) return;
             const value = toByte(micMagicSelect?.value || 0, 0, 5);
-            const ok = await sendCommand(0x2E, [this.checked ? 1 : 0, value]);
+            const ok = await sendCommand(CMD.EQ_MIC_Magic_Sound, [this.checked ? 1 : 0, value]);
             if (ok) addLog(`[麦克风] 魔音效果: ${this.checked ? '开启' : '关闭'} 值=${value}`);
         });
         if (micMagicSelect && micMagicToggle) {
-            featureRegistry.set(0x2E, {
+            featureRegistry.set(CMD.EQ_MIC_Magic_Sound, {
                 elements: [micMagicSelect, micMagicToggle],
                 apply(params = []) {
                     if (params.length > 0) micMagicToggle.checked = params[0] === 1;
@@ -1007,21 +1097,21 @@
                 }
             });
         }
-        bindButtonCommand('micResetBtn', '麦克风 一键恢复默认', 0x28, [1]);
-        bindButtonCommand('micSaveBtn', '麦克风 保存设置', 0x37, [1]);
+        bindButtonCommand('micResetBtn', '麦克风 一键恢复默认', CMD.EQ_MIC_RESET, [1]);
+        bindButtonCommand('micSaveBtn', '麦克风 保存设置', CMD.EQ_MIC_SAVE, [1]);
 
         // ===== 音乐面板 =====
-        bindValueCommand({ label: '音乐 主音量', cmd: 0x11, toggleId: 'musicVolToggle', sliderId: 'musicVol', displayId: 'musicVolVal', min: 0, max: 32 });
-        bindValueCommand({ label: '音乐 高音', cmd: 0x12, toggleId: 'musicTrebleToggle', sliderId: 'musicTreble', displayId: 'musicTrebleVal', min: 0, max: 32 });
-        bindValueCommand({ label: '音乐 中音', cmd: 0x13, toggleId: 'musicMidToggle', sliderId: 'musicMid', displayId: 'musicMidVal', min: 0, max: 32 });
-        bindValueCommand({ label: '音乐 低音', cmd: 0x14, toggleId: 'musicBassToggle', sliderId: 'musicBass', displayId: 'musicBassVal', min: 0, max: 32 });
-        bindEqControls({ label: '音乐 EQ', cmd: 0x15, toggleId: 'musicEqToggle', containerId: 'musicEqWrapper', bands: tenBandEq.map(band => ({ ...band })) });
-        bindValueCommand({ label: '音乐 3D丽音', cmd: 0x18, toggleId: 'music3dToggle', sliderId: 'music3dVal', displayId: 'music3dValDisplay', min: 0, max: 32 });
-        bindValueCommand({ label: '音乐 人声消除', cmd: 0x19, toggleId: 'musicVocalCutToggle', sliderId: 'musicVocalCutVal', displayId: 'musicVocalCutValDisplay', min: 0, max: 32 });
-        bindValueCommand({ label: '音乐 虚拟低音', cmd: 0x1A, toggleId: 'musicVbToggle', sliderId: 'musicVbVal', displayId: 'musicVbValDisplay', min: 0, max: 32 });
-        bindValueCommand({ label: '音乐 人声激励', cmd: 0x1B, toggleId: 'musicExciterToggle', sliderId: 'musicExciterVal', displayId: 'musicExciterValDisplay', min: 0, max: 32 });
-        bindButtonCommand('musicResetBtn', '音乐 一键恢复默认', 0x10, [1]);
-        bindButtonCommand('musicSaveBtn', '音乐 保存设置', 0x27, [1]);
+        bindValueCommand({ label: '音乐 主音量', cmd: CMD.EQ_VOL_VAL, toggleId: 'musicVolToggle', sliderId: 'musicVol', displayId: 'musicVolVal', min: 0, max: 32 });
+        bindValueCommand({ label: '音乐 高音', cmd: CMD.EQ_VOL_TRE, toggleId: 'musicTrebleToggle', sliderId: 'musicTreble', displayId: 'musicTrebleVal', min: 0, max: 32 });
+        bindValueCommand({ label: '音乐 中音', cmd: CMD.EQ_VOL_MID, toggleId: 'musicMidToggle', sliderId: 'musicMid', displayId: 'musicMidVal', min: 0, max: 32 });
+        bindValueCommand({ label: '音乐 低音', cmd: CMD.EQ_VOL_BASS, toggleId: 'musicBassToggle', sliderId: 'musicBass', displayId: 'musicBassVal', min: 0, max: 32 });
+        bindEqControls({ label: '音乐 EQ', cmd: CMD.EQ_VOL_FRE_VAL, toggleId: 'musicEqToggle', containerId: 'musicEqWrapper', bands: tenBandEq.map(band => ({ ...band })) });
+        bindValueCommand({ label: '音乐 3D丽音', cmd: CMD.EQ_VOL_3D, toggleId: 'music3dToggle', sliderId: 'music3dVal', displayId: 'music3dValDisplay', min: 0, max: 32 });
+        bindValueCommand({ label: '音乐 人声消除', cmd: CMD.EQ_Voice_Cut, toggleId: 'musicVocalCutToggle', sliderId: 'musicVocalCutVal', displayId: 'musicVocalCutValDisplay', min: 0, max: 32 });
+        bindValueCommand({ label: '音乐 虚拟低音', cmd: CMD.EQ_VOL_VB, toggleId: 'musicVbToggle', sliderId: 'musicVbVal', displayId: 'musicVbValDisplay', min: 0, max: 32 });
+        bindValueCommand({ label: '音乐 人声激励', cmd: CMD.EQ_Voice_EXCITER, toggleId: 'musicExciterToggle', sliderId: 'musicExciterVal', displayId: 'musicExciterValDisplay', min: 0, max: 32 });
+        bindButtonCommand('musicResetBtn', '音乐 一键恢复默认', CMD.EQ_VOL_RESET, [1]);
+        bindButtonCommand('musicSaveBtn', '音乐 保存设置', CMD.EQ_VOL_SAVE, [1]);
     }
 
     // 页面卸载时断开蓝牙（优雅）
