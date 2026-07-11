@@ -138,6 +138,20 @@
     const featureRegistry = new Map();
     const modeGroups = new Map();
 
+    // ---------- 辅助函数：CMD 名称解析 ----------
+    const CMD_NAMES = {};
+    (function buildCmdNames() {
+        for (const [name, value] of Object.entries(CMD)) {
+            CMD_NAMES[value] = name;
+        }
+    })();
+
+    function cmdName(cmd) {
+        const v = toByte(cmd);
+        const name = CMD_NAMES[v];
+        return name ? `${name}(0x${v.toString(16).padStart(2, '0').toUpperCase()})` : `0x${v.toString(16).padStart(2, '0').toUpperCase()}`;
+    }
+
     // ---------- 辅助函数：日志 ----------
     function addLog(message, isError = false) {
         const logDiv = logPanel;
@@ -288,7 +302,7 @@
         return map;
     }
 
-    async function writeFrame(frame, cmdHex, params = []) {
+    async function writeFrame(frame, cmd, params = []) {
         if (controlWriteChar.properties?.write && typeof controlWriteChar.writeValueWithResponse === 'function') {
             await controlWriteChar.writeValueWithResponse(frame);
         } else if (controlWriteChar.properties?.writeWithoutResponse && typeof controlWriteChar.writeValueWithoutResponse === 'function') {
@@ -296,33 +310,33 @@
         } else {
             await controlWriteChar.writeValue(frame);
         }
-        addLog(`[发送] CMD=${cmdHex} PARAMS=[${params.join(', ')}] FRAME=${bytesToHex(frame)}`);
+        addLog(`[发送] ${cmdName(cmd)} PARAMS=[${params.join(', ')}] FRAME=${bytesToHex(frame)}`);
     }
 
     async function sendCommand(cmd, params = []) {
-        const cmdHex = `0x${toByte(cmd).toString(16).padStart(2, '0').toUpperCase()}`;
+        const cmdLabel = cmdName(cmd);
         let frame;
 
         try {
             frame = buildBleFrame(cmd, params);
         } catch (error) {
-            addLog(`[发送失败] CMD=${cmdHex} ${error.message}`, true);
+            addLog(`[发送失败] ${cmdLabel} ${error.message}`, true);
             return false;
         }
 
         if (!gattServer || !gattServer.connected || !controlWriteChar) {
-            addLog(`[发送失败] 控制特征未连接 CMD=${cmdHex} PARAMS=[${params.join(', ')}] FRAME=${bytesToHex(frame)}`, true);
+            addLog(`[发送失败] 控制特征未连接 ${cmdLabel} PARAMS=[${params.join(', ')}] FRAME=${bytesToHex(frame)}`, true);
             return false;
         }
 
-        const task = writeQueue.then(() => writeFrame(frame, cmdHex, params));
+        const task = writeQueue.then(() => writeFrame(frame, cmd, params));
         writeQueue = task.catch(() => {});
 
         try {
             await task;
             return true;
         } catch (error) {
-            addLog(`[发送失败] CMD=${cmdHex} ${error.message} PARAMS=[${params.join(', ')}] FRAME=${bytesToHex(frame)}`, true);
+            addLog(`[发送失败] ${cmdLabel} ${error.message} PARAMS=[${params.join(', ')}] FRAME=${bytesToHex(frame)}`, true);
             return false;
         }
     }
@@ -344,8 +358,7 @@
         const params = Array.from(bytes.slice(4, -1));
         const validLen = len === bytes.length - 4;
         const ok = validHeader && validWebId && validLen && crcExpected === crcActual;
-        const cmdHex = `0x${cmd.toString(16).padStart(2, '0').toUpperCase()}`;
-        addLog(`[接收${ok ? '' : '异常'}] CMD=${cmdHex} LEN=${len} PARAMS=[${params.join(', ')}] CRC=${ok ? 'OK' : `ERR(${crcExpected}/${crcActual})`} FRAME=${bytesToHex(bytes)}`, !ok);
+        addLog(`[接收${ok ? '' : '异常'}] ${cmdName(cmd)} LEN=${len} PARAMS=[${params.join(', ')}] CRC=${ok ? 'OK' : `ERR(${crcExpected}/${crcActual})`} FRAME=${bytesToHex(bytes)}`, !ok);
         if (!ok) return;
 
         if (cmd === CMD.SYS_CHIP_SUPPORT_MAP) {
