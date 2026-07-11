@@ -138,6 +138,11 @@
     const featureRegistry = new Map();
     const modeGroups = new Map();
 
+    // 注册系统命令（无 UI 控件，仅用于 supportedCommands 识别 & 测试）
+    [CMD.SYS_ASK, CMD.SYS_CHIP_SUPPORT_MAP, CMD.SYS_ASK_ALL, CMD.SYS_ASK_CMD,
+     CMD.SYS_ASK_MAP, CMD.SYS_ASK_BAT, CMD.SYS_ASK_MCU_ID, CMD.SYS_ASK_MID]
+        .forEach(cmd => featureRegistry.set(cmd, { elements: [], apply() {} }));
+
     // ---------- 辅助函数：CMD 名称解析 ----------
     const CMD_NAMES = {};
     (function buildCmdNames() {
@@ -369,6 +374,7 @@
         }
 
         applyFeatureState(cmd, params);
+        _resolveCmdTestResponse(cmd, params);
     }
 
     async function initControlCharacteristics(server) {
@@ -1208,6 +1214,208 @@
         bindButtonCommand('musicResetBtn', '音乐 一键恢复默认', CMD.EQ_VOL_RESET, [1]);
         bindButtonCommand('musicSaveBtn', '音乐 保存设置', CMD.EQ_VOL_SAVE, [1]);
     }
+
+    // ================================================================
+    //  CMD 回归测试 — 在浏览器控制台调用 runCmdTest() 启动
+    // ================================================================
+    const _cmdTestPending = new Map();
+
+    function _resolveCmdTestResponse(cmd, params) {
+        const entry = _cmdTestPending.get(cmd);
+        if (entry) {
+            clearTimeout(entry.timer);
+            _cmdTestPending.delete(cmd);
+            entry.resolve(params);
+        }
+    }
+
+    function _waitCmdResponse(cmd, timeoutMs) {
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => {
+                _cmdTestPending.delete(cmd);
+                reject(new Error('超时'));
+            }, timeoutMs);
+            _cmdTestPending.set(cmd, { resolve, timer });
+        });
+    }
+
+    // ---- 测试规格：每个 CMD 的发送参数 & 危险标记 ----
+    const CMD_TEST_SPEC = (function buildSpec() {
+        const EQ_10BAND = [1, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12]; // 10段EQ全0dB
+        const s = {};
+
+        // 系统命令 (0x00-0x07) — 芯片位图 byte0=0xFF 全部标为支持
+        s[CMD.SYS_ASK]              = { params: [] };
+        s[CMD.SYS_CHIP_SUPPORT_MAP] = { params: [] };
+        s[CMD.SYS_ASK_ALL]          = { params: [] };
+        s[CMD.SYS_ASK_CMD]          = { params: [0x01] };
+        s[CMD.SYS_ASK_MAP]          = { params: () => buildSupportedMapBytes() };
+        s[CMD.SYS_ASK_BAT]          = { params: [] };
+        s[CMD.SYS_ASK_MCU_ID]       = { params: [] };
+        s[CMD.SYS_ASK_MID]          = { params: [] };
+
+        // 音乐 EQ
+        s[CMD.EQ_VOL_RESET]   = { params: [1], danger: '重置音乐设置' };
+        s[CMD.EQ_VOL_VAL]     = { params: [1, 16] };
+        s[CMD.EQ_VOL_TRE]     = { params: [1, 16] };
+        s[CMD.EQ_VOL_MID]     = { params: [1, 16] };
+        s[CMD.EQ_VOL_BASS]    = { params: [1, 16] };
+        s[CMD.EQ_VOL_FRE_VAL] = { params: EQ_10BAND };
+
+        // 音效增强
+        s[CMD.EQ_VOL_3D]        = { params: [1, 16] };
+        s[CMD.EQ_Voice_Cut]     = { params: [1, 16] };
+        s[CMD.EQ_VOL_VB]        = { params: [1, 16] };
+        s[CMD.EQ_Voice_EXCITER] = { params: [1, 16] };
+
+        // 播放控制
+        s[CMD.EQ_VOL_PAUSE]     = { params: [1], danger: '暂停播放' };
+        s[CMD.EQ_VOL_PREV]      = { params: [1], danger: '上一曲' };
+        s[CMD.EQ_VOL_NEXT]      = { params: [1], danger: '下一曲' };
+        s[CMD.EQ_VOL_MODE]      = { params: [1], danger: '切换播放模式' };
+        s[CMD.EQ_VOL_PLAY_MODE] = { params: [1], danger: '切换播放模式' };
+        s[CMD.EQ_VOL_SAVE]      = { params: [1], danger: '写入Flash(保存)' };
+
+        // MIC
+        s[CMD.EQ_MIC_RESET]      = { params: [1], danger: '重置MIC设置' };
+        s[CMD.EQ_MIC_VAL]        = { params: [1, 16] };
+        s[CMD.EQ_MIC_priority]   = { params: [1, 16] };
+        s[CMD.EQ_MIC_FRE_VAL]    = { params: EQ_10BAND };
+        s[CMD.EQ_MIC_ECHO]       = { params: [1, 16] };
+        s[CMD.EQ_MIC_REVERB]     = { params: [1, 16] };
+        s[CMD.EQ_MIC_Magic_Sound]= { params: [1, 1] };
+        s[CMD.EQ_MIC_SAVE]       = { params: [1], danger: '写入Flash(保存)' };
+
+        // 灯光
+        s[CMD.LIGHT_AUTO_EN]   = { params: [1, 128] };
+        s[CMD.LIGHT_COLOR_SET] = { params: [1, 128] };
+        s[CMD.LIGHT_VAL_SET]   = { params: [1, 8] };
+        s[CMD.LIGHT_SPEED_SET] = { params: [1, 8] };
+        s[CMD.LIGHT_SAVE]      = { params: [1], danger: '写入Flash(保存)' };
+
+        // 灯光模式 (0x39-0x48 = LIGHT_MODE_0 ~ 15)
+        for (let i = 0; i < 16; i++) {
+            s[CMD.LIGHT_MODE_0 + i] = { params: [1] };
+        }
+
+        // 文字
+        s[CMD.TEXT_Content]          = { params: [72, 105], noResponse: true }; // "Hi"
+        s[CMD.TEXT_COLOR_ONE]        = { params: [1, 128] };
+        s[CMD.TEXT_COLOR_AUTO_Speed] = { params: [1, 8] };
+        s[CMD.TEXT_Scroll_Speed]     = { params: [1, 8] };
+        s[CMD.TEXT_LIGHT]            = { params: [1, 8] };
+        s[CMD.TEXT_SAVE]             = { params: [1], danger: '写入Flash(保存)' };
+
+        // 文字模式 (0x59-0x5F = TEXT_MODE_0 ~ 6)
+        for (let i = 0; i < 7; i++) {
+            s[CMD.TEXT_MODE_0 + i] = { params: [1] };
+        }
+
+        return s;
+    })();
+
+    /**
+     * 运行所有 CMD 回归测试
+     * 用法：在浏览器控制台输入 runCmdTest()
+     * 选项：runCmdTest({ includeDangerous: true, timeoutMs: 3000 })
+     */
+    async function runCmdTest(options = {}) {
+        const { includeDangerous = false, timeoutMs = 2000 } = options;
+
+        if (!gattServer || !gattServer.connected) {
+            addLog('[测试] 设备未连接，请先扫描并连接', true);
+            return;
+        }
+
+        addLog('══════════ CMD 回归测试 开始 ══════════');
+        const results = [];
+        let passed = 0, failed = 0, warned = 0, skipped = 0;
+        const t0 = performance.now();
+
+        // 收集所有待测 CMD（按值排序）
+        const entries = Object.entries(CMD)
+            .filter(([n]) => !n.startsWith('LIGHT_MODE_') || n === 'LIGHT_MODE_0')
+            .sort((a, b) => a[1] - b[1]);
+
+        // 把动态模式命令补进去
+        const seen = new Set(entries.map(e => e[1]));
+        for (let i = 1; i < 16; i++) seen.add(CMD.LIGHT_MODE_0 + i);
+        for (let i = 1; i < 7; i++) seen.add(CMD.TEXT_MODE_0 + i);
+        // 补到 entries
+        for (const cmd of seen) {
+            if (!entries.some(e => e[1] === cmd)) {
+                const name = cmdName(cmd);
+                entries.push([name, cmd]);
+            }
+        }
+        entries.sort((a, b) => a[1] - b[1]);
+
+        for (const [name, cmd] of entries) {
+            const spec = CMD_TEST_SPEC[cmd];
+
+            if (!spec) {
+                skipped++;
+                addLog(`[测试] ⏭ ${name} — 无测试规格，跳过`);
+                continue;
+            }
+
+            if (!supportedCommands.has(cmd)) {
+                skipped++;
+                addLog(`[测试] ⏭ ${name} — 硬件不支持，跳过`);
+                continue;
+            }
+
+            if (spec.danger && !includeDangerous) {
+                skipped++;
+                addLog(`[测试] ⏭ ${name} — ⚠${spec.danger}（传 includeDangerous:true 强制执行）`);
+                continue;
+            }
+
+            const params = typeof spec.params === 'function' ? spec.params() : [...spec.params];
+
+            if (spec.noResponse) {
+                // 只写命令：只验证发送
+                const sent = await sendCommand(cmd, params);
+                if (sent) { passed++; addLog(`[测试] ✅ ${name} — 发送成功（只写命令）`); }
+                else       { failed++; addLog(`[测试] ❌ ${name} — 发送失败`, true); }
+                continue;
+            }
+
+            // 发送并等待回复
+            const respPromise = _waitCmdResponse(cmd, timeoutMs);
+            const sent = await sendCommand(cmd, params);
+
+            if (!sent) {
+                failed++;
+                addLog(`[测试] ❌ ${name} — 发送失败`, true);
+                _cmdTestPending.delete(cmd);
+                continue;
+            }
+
+            try {
+                const resp = await respPromise;
+                passed++;
+                addLog(`[测试] ✅ ${name} — 回复 PARAMS=[${resp.join(', ')}]`);
+            } catch {
+                warned++;
+                addLog(`[测试] ⚠️ ${name} — 无回复（超时 ${timeoutMs}ms，可能为只写命令）`);
+            }
+
+            // 命令间隔，避免 flooding
+            await new Promise(r => setTimeout(r, 80));
+        }
+
+        const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
+        addLog(`────────── 测试完成 ──────────`);
+        addLog(`  ✅ 通过: ${passed}  ⚠️ 无回复: ${warned}  ❌ 失败: ${failed}  ⏭ 跳过: ${skipped}`);
+        addLog(`  总耗时: ${elapsed}s`);
+        addLog(`══════════════════════════════════`);
+
+        return { passed, warned, failed, skipped, elapsed };
+    }
+
+    // 暴露到全局，方便控制台调用
+    window.runCmdTest = runCmdTest;
 
     // 页面卸载时断开蓝牙（优雅）
     window.addEventListener('beforeunload', () => {
