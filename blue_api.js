@@ -362,24 +362,99 @@
         controlWriteChar = null;
         controlNotifyChar = null;
 
+        // ===== 调试：枚举设备所有服务与特征 =====
+        try {
+            const allServices = await server.getPrimaryServices();
+            addLog(`══════ 设备服务/特征全枚举 (共 ${allServices.length} 个服务) ══════`);
+            for (const svc of allServices) {
+                const chars = await svc.getCharacteristics();
+                addLog(`  📦 服务: ${svc.uuid}${svc.isPrimary ? ' (PRIMARY)' : ''} — ${chars.length} 个特征`);
+                for (const ch of chars) {
+                    const props = [];
+                    if (ch.properties.read) props.push('READ');
+                    if (ch.properties.write) props.push('WRITE');
+                    if (ch.properties.writeWithoutResponse) props.push('WRITE_NO_RESP');
+                    if (ch.properties.notify) props.push('NOTIFY');
+                    if (ch.properties.indicate) props.push('INDICATE');
+                    if (ch.properties.broadcast) props.push('BROADCAST');
+                    if (ch.properties.authenticatedSignedWrites) props.push('AUTH_SIGNED');
+                    addLog(`    ↳ 特征: ${ch.uuid}  [${props.join(', ')}]`);
+                }
+            }
+            addLog(`══════════════════════════════════════════════════════`);
+        } catch (enumErr) {
+            addLog(`⚠ 服务枚举失败: ${enumErr.message}`, false);
+        }
+
+        // ===== 连接控制服务 =====
         try {
             const service = await server.getPrimaryService(BLE_SERVICE_UUID);
-            controlWriteChar = await service.getCharacteristic(BLE_WRITE_CHARACTERISTIC_UUID);
-            addLog(`控制写入特征已连接: ${BLE_WRITE_CHARACTERISTIC_UUID}`);
+            addLog(`✅ 已找到控制服务: ${BLE_SERVICE_UUID}`);
 
+            // 获取该服务下所有特征（用于 fallback）
+            const allChars = await service.getCharacteristics();
+
+            // --- 写入特征：优先精确 UUID，失败则自动匹配 ---
+            try {
+                controlWriteChar = await service.getCharacteristic(BLE_WRITE_CHARACTERISTIC_UUID);
+                addLog(`✅ 控制写入特征(精确匹配): ${BLE_WRITE_CHARACTERISTIC_UUID}`);
+            } catch (writeUuidErr) {
+                addLog(`⚠ 精确匹配写入特征失败: ${writeUuidErr.message}，尝试自动匹配...`, false);
+                controlWriteChar = allChars.find(ch =>
+                    ch.properties.write || ch.properties.writeWithoutResponse
+                ) || null;
+                if (controlWriteChar) {
+                    addLog(`✅ 控制写入特征(自动匹配): ${controlWriteChar.uuid}`);
+                } else {
+                    throw new Error('未找到任何可写入的特征');
+                }
+            }
+            // 记录写入特征属性
+            const writeProps = [];
+            if (controlWriteChar.properties.write) writeProps.push('WRITE');
+            if (controlWriteChar.properties.writeWithoutResponse) writeProps.push('WRITE_NO_RESP');
+            addLog(`  写入属性: [${writeProps.join(', ')}]`);
+
+            // --- 通知特征：优先精确 UUID，失败则自动匹配 ---
             try {
                 controlNotifyChar = await service.getCharacteristic(BLE_NOTIFY_CHARACTERISTIC_UUID);
-                if (controlNotifyChar && typeof controlNotifyChar.startNotifications === 'function') {
-                    await controlNotifyChar.startNotifications();
-                    controlNotifyChar.addEventListener('characteristicvaluechanged', handleControlNotify);
-                    addLog(`控制通知特征已启用: ${BLE_NOTIFY_CHARACTERISTIC_UUID}`);
+                addLog(`✅ 控制通知特征(精确匹配): ${BLE_NOTIFY_CHARACTERISTIC_UUID}`);
+            } catch (notifyUuidErr) {
+                addLog(`⚠ 精确匹配通知特征失败: ${notifyUuidErr.message}，尝试自动匹配...`, false);
+                controlNotifyChar = allChars.find(ch =>
+                    ch.properties.notify || ch.properties.indicate
+                ) || null;
+                if (controlNotifyChar) {
+                    addLog(`✅ 控制通知特征(自动匹配): ${controlNotifyChar.uuid}`);
+                } else {
+                    addLog(`⚠ 未找到任何可通知的特征`, false);
                 }
-            } catch (notifyError) {
-                addLog(`控制通知特征未启用: ${notifyError.message}`, false);
+            }
+
+            // 启用通知
+            if (controlNotifyChar) {
+                const notifyProps = [];
+                if (controlNotifyChar.properties.notify) notifyProps.push('NOTIFY');
+                if (controlNotifyChar.properties.indicate) notifyProps.push('INDICATE');
+                addLog(`  通知属性: [${notifyProps.join(', ')}]`);
+
+                if (typeof controlNotifyChar.startNotifications === 'function') {
+                    try {
+                        await controlNotifyChar.startNotifications();
+                        controlNotifyChar.addEventListener('characteristicvaluechanged', handleControlNotify);
+                        addLog(`✅ 控制通知特征已启用: ${controlNotifyChar.uuid}`);
+                    } catch (startErr) {
+                        addLog(`⚠ 启动通知失败: ${startErr.message}`, false);
+                    }
+                }
             }
             return true;
         } catch (error) {
-            addLog(`控制服务/写入特征连接失败，请检查 UUID 占位常量: ${error.message}`, true);
+            addLog(`❌ 控制服务/写入特征连接失败: ${error.message}`, true);
+            addLog(`  提示: 请确认设备固件使用了以下 UUID:`, true);
+            addLog(`    服务: ${BLE_SERVICE_UUID}`, true);
+            addLog(`    写入特征: ${BLE_WRITE_CHARACTERISTIC_UUID}`, true);
+            addLog(`    通知特征: ${BLE_NOTIFY_CHARACTERISTIC_UUID}`, true);
             return false;
         }
     }
