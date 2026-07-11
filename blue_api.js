@@ -506,10 +506,15 @@
             const map = buildSupportedMapBytes();
             if (map.some(byte => byte !== 0)) {
                 const askMapSent = await sendCommand(CMD.SYS_ASK_MAP, map);
-                if (!askMapSent) throw new Error('功能状态请求发送失败');
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                if (featureStateReplyCount === 0) {
-                    throw new Error('等待功能状态回复超时');
+                if (!askMapSent) {
+                    addLog('功能状态请求发送失败，跳过状态同步', false);
+                } else {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    if (featureStateReplyCount === 0) {
+                        addLog('功能状态回复超时，跳过状态同步（控件将使用默认值）', false);
+                    } else {
+                        addLog(`已同步 ${featureStateReplyCount} 个功能状态`);
+                    }
                 }
             }
 
@@ -624,8 +629,9 @@
                 addLog(`序列号: ${serial}`);
             } catch(e) { /* 非必须 */ }
         } catch(error) {
-            addLog(`读取设备信息服务失败: ${error.message}`, true);
-            manufacturerSpan.innerText = '不支持/无权限';
+            // TODO: 目标硬件(A6L/A6D/A8D)未实现标准 Device Information 服务(0x180A)，此为预期行为
+            addLog(`设备信息服务(0x180A): 硬件未实现，跳过`);
+            manufacturerSpan.innerText = '—';
         }
     }
 
@@ -641,8 +647,9 @@
             addLog(`电池电量: ${batteryPercent}%`);
             return batteryPercent;
         } catch(e) {
-            addLog(`未找到电池服务或读取失败: ${e.message}`, false);
-            batteryLevelSpan.innerText = '不支持';
+            // TODO: 目标硬件(A6L/A6D/A8D)未实现标准 Battery Service(0x180F)，此为预期行为
+            addLog(`电池服务(0x180F): 硬件未实现，跳过`);
+            batteryLevelSpan.innerText = '—';
             return null;
         }
     }
