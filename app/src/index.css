@@ -1,0 +1,10 @@
+/* Global reset — individual page styles are in styles/*.css */
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Prevent page-level CSS from breaking the root container */
+#root {
+  min-height: 100vh;
+}

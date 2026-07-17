@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Android BLE 蓝牙测试助手 | Web Bluetooth Demo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: system-ui, 'Segoe UI', 'Roboto', 'Noto Sans', sans-serif;
+            background: #f5f7fb;
+            margin: 0;
+            padding: 16px;
+            color: #1e293b;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            overflow: hidden;
+            padding: 20px 18px 28px;
+        }
+        h1 {
+            font-size: 1.65rem;
+            font-weight: 600;
+            margin: 0 0 6px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .badge {
+            font-size: 0.7rem;
+            background: #e6f0ff;
+            color: #1e6fdf;
+            padding: 4px 10px;
+            border-radius: 40px;
+            font-weight: normal;
+        }
+        .sub {
+            color: #5b6e8c;
+            font-size: 0.8rem;
+            margin-bottom: 20px;
+            border-left: 3px solid #3b82f6;
+            padding-left: 12px;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 20px 0 16px;
+        }
+        button {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #1e293b;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.02);
+            flex: 0 0 auto;
+        }
+        button.primary {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+            box-shadow: 0 2px 5px rgba(59,130,246,0.2);
+        }
+        button.primary:active { background: #2563eb; transform: scale(0.97);}
+        button.danger {
+            border-color: #fecaca;
+            color: #b91c1c;
+            background: #fff5f5;
+        }
+        button.danger:active { background: #fee2e2; }
+        button:active { transform: scale(0.97);}
+        button:disabled {
+            opacity: 0.5;
+            transform: none;
+            cursor: not-allowed;
+        }
+        .info-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 12px 16px;
+            margin: 16px 0;
+            border: 1px solid #e2e8f0;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2edf2;
+            font-size: 0.85rem;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .label {
+            font-weight: 600;
+            color: #475569;
+        }
+        .value {
+            color: #0f172a;
+            word-break: break-all;
+            max-width: 60%;
+            text-align: right;
+            font-family: monospace;
+        }
+        .device-dashboard {
+            background: #ffffff;
+            border-color: #dbe5f0;
+            padding: 16px;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+        }
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .dashboard-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .dashboard-subtitle {
+            font-size: 0.72rem;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        .dashboard-status {
+            min-width: 112px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 7px 10px;
+            border-radius: 999px;
+            background: #f1f5f9;
+            color: #334155;
+            font-size: 0.78rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .dashboard-status .status {
+            margin-right: 0;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .metric-tile {
+            min-height: 74px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .metric-label {
+            color: #64748b;
+            font-size: 0.74rem;
+            font-weight: 600;
+        }
+        .metric-value {
+            color: #0f172a;
+            font-size: 0.92rem;
+            font-weight: 700;
+            line-height: 1.25;
+            word-break: break-word;
+        }
+        .metric-value.mono {
+            font-family: monospace;
+        }
+        /* Tab 标签页样式 */
+        .tab-nav {
+            display: flex;
+            gap: 0;
+            margin-bottom: 0;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            padding: 10px 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #64748b;
+            border-radius: 0;
+            box-shadow: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .tab-btn.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+            background: transparent;
+        }
+        .tab-btn:active { transform: none; }
+        .tab-panel { display: none; padding: 16px 0 0 0; }
+        .tab-panel.active { display: block; }
+        .panel-skeleton {
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 14px;
+            color: #64748b;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+        /* 控件行 */
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .control-row:last-child { border-bottom: none; }
+        .control-label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #334155;
+        }
+        .control-value {
+            font-size: 0.8rem;
+            color: #64748b;
+            min-width: 40px;
+            text-align: right;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 120px;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(59,130,246,0.3);
+        }
+        /* 色相渐变条 */
+        input.hue-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 200px;
+            max-width: none;
+            height: 18px;
+            border-radius: 10px;
+            outline: none;
+            background: linear-gradient(to right,
+                #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000
+            );
+            flex: none;
+        }
+        input.hue-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--thumb-color, white);
+            border: 3px solid #334155;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+            transition: background 0.1s ease;
+        }
+        .color-preview-box {
+            width: 140px;
+            height: 64px;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            flex-shrink: 0;
+            transition: background 0.1s;
+            margin: 6px 0 2px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .hue-degree {
+            font-size: 0.75rem;
+            color: #64748b;
+            min-width: 52px;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+        /* 发送行 */
+        .send-row {
+            display: flex;
+            gap: 8px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .send-row input[type="text"] {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            outline: none;
+        }
+        .send-row input[type="text"]:focus { border-color: #3b82f6; }
+        .send-row button {
+            flex: 0 0 auto;
+            padding: 8px 18px;
+            font-size: 0.85rem;
+            border-radius: 10px;
+        }
+        /* 方块矩阵 */
+        .block-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .color-block {
+            aspect-ratio: 1;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        .color-block.dimmed {
+            opacity: 0.4;
+            filter: grayscale(30%);
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 6px rgba(59,130,246,0.5), 0 0 20px rgba(59,130,246,0.2); }
+            50% { box-shadow: 0 0 14px rgba(59,130,246,0.7), 0 0 36px rgba(59,130,246,0.35); }
+        }
+        .color-block.selected {
+            border-color: #3b82f6;
+            animation: pulseGlow 1.8s ease-in-out infinite;
+            transform: scale(1.08);
+            opacity: 1;
+            filter: none;
+        }
+        .color-block:active { transform: scale(0.95); }
+        .color-block.selected:active { transform: scale(1.05); }
+        /* 开关 */
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+            display: inline-block;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #cbd5e1;
+            border-radius: 26px;
+            transition: 0.25s;
+        }
+        .toggle-slider::before {
+            content: "";
+            position: absolute;
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.25s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        .toggle-switch input:checked + .toggle-slider { background: #3b82f6; }
+        .toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); }
+        /* 时间常数行 */
+        .time-input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 0;
+        }
+        .time-input-row input[type="number"] {
+            width: 80px;
+            padding: 6px 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            outline: none;
+            text-align: center;
+        }
+        .time-input-row input[type="number"]:focus { border-color: #3b82f6; }
+        .time-input-row button {
+            flex: 0 0 auto;
+            padding: 6px 16px;
+            font-size: 0.8rem;
+            border-radius: 10px;
+        }
+        .level-meter-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+        .level-meter {
+            flex: 1;
+            height: 10px;
+            background: #e2e8f0;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .level-meter-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #22c55e, #f59e0b, #ef4444);
+            transition: width 0.2s ease;
+        }
+        .inline-actions {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+        .inline-actions button {
+            flex: 1;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 0.82rem;
+        }
+        .log-area {
+            display: none;
+        }
+        .log-title {
+            display: none;
+        }
+        .clear-log {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 0.7rem;
+            color: #5b6e8c;
+            padding: 2px 8px;
+            box-shadow: none;
+            text-decoration: underline;
+        }
+        .status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 10px;
+            background: #94a3b8;
+            margin-right: 8px;
+        }
+        .status.connected {
+            background: #22c55e;
+            box-shadow: 0 0 4px #22c55e;
+        }
+        hr {
+            margin: 16px 0;
+            border: none;
+            border-top: 1px solid #e2e8f0;
+        }
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            color: #7e8aa2;
+            margin-top: 24px;
+        }
+        @media (max-width: 640px) {
+            body {
+                padding: 8px;
+            }
+            .container {
+                padding: 12px 10px;
+                border-radius: 16px;
+                max-width: 100%;
+            }
+            h1 {
+                font-size: 1.25rem;
+                gap: 6px;
+            }
+            .badge {
+                font-size: 0.65rem;
+                padding: 3px 8px;
+            }
+            .sub {
+                font-size: 0.75rem;
+                margin-bottom: 14px;
+                padding-left: 10px;
+            }
+            .btn-group {
+                flex-direction: column;
+                gap: 8px;
+                margin: 14px 0 12px;
+            }
+            button {
+                width: 100%;
+                box-sizing: border-box;
+                padding: 12px 16px;
+                font-size: 0.9rem;
+            }
+            .info-card {
+                padding: 10px 12px;
+                border-radius: 14px;
+                margin: 12px 0;
+            }
+            .info-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 2px;
+                padding: 6px 0;
+            }
+            .info-row .value {
+                max-width: 100%;
+                text-align: left;
+                font-size: 0.8rem;
+            }
+            .info-row .label {
+                font-size: 0.8rem;
+            }
+            .device-dashboard {
+                padding: 12px;
+            }
+            .dashboard-header {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .dashboard-status {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            .metric-tile {
+                min-height: 66px;
+            }
+            .tab-nav {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .tab-btn {
+                font-size: 0.75rem;
+                padding: 10px 4px;
+                white-space: nowrap;
+                flex: 1;
+                min-width: 0;
+            }
+            .tab-panel {
+                padding: 12px 0 0 0;
+            }
+            .control-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                padding: 8px 0;
+            }
+            .control-label {
+                font-size: 0.8rem;
+            }
+            .control-value {
+                text-align: left;
+                min-width: auto;
+            }
+            input[type="range"] {
+                width: 100%;
+            }
+            input.hue-slider {
+                width: 100%;
+                max-width: none;
+            }
+            .color-preview {
+                align-self: flex-start;
+            }
+            .color-preview-box {
+                width: 100%;
+                height: 48px;
+            }
+            .send-row {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .send-row input[type="text"] {
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .send-row button {
+                width: 100%;
+            }
+            .block-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+            .color-block {
+                font-size: 0.7rem;
+                border-radius: 8px;
+            }
+            .time-input-row {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .time-input-row input[type="number"] {
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .log-area {
+                max-height: 200px;
+                font-size: 0.7rem;
+                padding: 10px;
+                border-radius: 12px;
+                margin-top: 14px;
+            }
+            .log-title {
+                font-size: 0.75rem;
+                margin-top: 4px;
+            }
+            footer {
+                font-size: 0.65rem;
+                margin-top: 16px;
+            }
+            hr {
+                margin: 12px 0;
+            }
+            /* 麦克风面板 - 移动端EQ */
+            input[type="range"].mic-eq-slider {
+                -webkit-appearance: auto;
+                appearance: auto;
+                width: 100%;
+                height: 36px;
+                margin: 4px 0;
+            }
+            .mic-eq-band-container {
+                width: 100%;
+                max-width: 280px;
+            }
+            .mic-db-scale { display: none; }
+            .mic-ctrl-row {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .mic-ctrl-row input[type="range"] {
+                width: 100%;
+                flex: auto;
+            }
+        }
+
+        /* 麦克风面板 - EQ均衡器 / PA功率 / 开机默认音量 */
+        .mic-section-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #475569;
+            margin: 14px 0 6px 0;
+            padding-left: 2px;
+        }
+        .mic-eq-wrapper {
+            display: flex;
+            gap: 6px;
+            align-items: stretch;
+            margin: 8px 0;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .mic-db-scale {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 210px;
+            padding-right: 6px;
+            font-size: 0.65rem;
+            color: #94a3b8;
+            flex-shrink: 0;
+            margin-bottom: 26px;
+            min-width: 38px;
+            text-align: right;
+        }
+        .mic-eq-band-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+            min-width: 48px;
+        }
+        input[type="range"].mic-eq-slider {
+            -webkit-appearance: slider-vertical;
+            appearance: slider-vertical;
+            width: 38px;
+            height: 190px;
+            padding: 0 3px;
+            margin: 6px 0;
+            background: transparent;
+        }
+        .mic-eq-value {
+            width: 44px;
+            text-align: center;
+            padding: 3px 2px;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.7rem;
+            background: #fff;
+        }
+        .mic-eq-label {
+            font-weight: 600;
+            margin-top: 2px;
+            font-size: 0.68rem;
+            text-align: center;
+            color: #475569;
+        }
+        .mic-ctrl-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .mic-ctrl-row:last-child { border-bottom: none; }
+        .mic-ctrl-row > label {
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: #334155;
+            white-space: nowrap;
+            min-width: 70px;
+        }
+        .mic-ctrl-row input[type="range"] {
+            flex: 1;
+            min-width: 60px;
+        }
+        .mic-ctrl-row input[type="number"] {
+            width: 52px;
+            text-align: center;
+            padding: 4px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.78rem;
+        }
+        .mic-ctrl-val {
+            font-size: 0.78rem;
+            color: #64748b;
+            min-width: 32px;
+            text-align: right;
+        }
+
+        /* ===== 新增：协议文档 V1.5 控件样式 ===== */
+        .panel-section {
+            margin: 14px 0 0 0;
+        }
+        .panel-section:first-child {
+            margin-top: 0;
+        }
+        .panel-section-title {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #475569;
+            margin: 0 0 6px 0;
+            padding: 6px 0 2px 0;
+            border-bottom: 1px solid #eef2f6;
+        }
+        .effect-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 0;
+            border-bottom: 1px solid #f8fafc;
+            flex-wrap: wrap;
+            min-height: 40px;
+            
+        }
+        .effect-row:last-child {
+            border-bottom: none;
+        }
+        .effect-label {
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: #334155;
+            min-width: 70px;
+            white-space: nowrap;
+        }
+        .effect-toggle {
+            flex-shrink: 0;
+        }
+        .effect-toggle .toggle-switch {
+            width: 40px;
+            height: 22px;
+        }
+        .effect-toggle .toggle-slider::before {
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+        }
+        .effect-toggle .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(18px);
+        }
+        .effect-slider-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 100px;
+        }
+        .effect-slider-wrap input[type="range"] {
+            flex: 1;
+            min-width: 60px;
+            max-width: 160px;
+        }
+        .effect-value {
+            font-size: 0.78rem;
+            color: #64748b;
+            min-width: 28px;
+            text-align: right;
+        }
+        .effect-select {
+            padding: 5px 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            background: #fff;
+            outline: none;
+        }
+        .effect-select:focus {
+            border-color: #3b82f6;
+        }
+
+        /* EQ 垂直滑块容器 */
+        .eq-wrapper {
+            display: flex;
+            gap: 4px;
+            align-items: stretch;
+            margin: 4px 0 2px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .eq-db-scale {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 170px;
+            padding-right: 4px;
+            font-size: 0.6rem;
+            color: #94a3b8;
+            flex-shrink: 0;
+            margin-bottom: 22px;
+            min-width: 30px;
+            text-align: right;
+        }
+        .eq-band {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+            min-width: 40px;
+        }
+        .eq-band input[type="range"] {
+            -webkit-appearance: slider-vertical;
+            appearance: slider-vertical;
+            width: 32px;
+            height: 150px;
+            padding: 0 2px;
+            margin: 4px 0;
+            background: transparent;
+        }
+        .eq-band-value {
+            width: 38px;
+            text-align: center;
+            padding: 2px;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.65rem;
+            background: #fff;
+        }
+        .eq-band-label {
+            font-weight: 600;
+            margin-top: 2px;
+            font-size: 0.62rem;
+            color: #475569;
+        }
+
+        /* 模式按钮网格 */
+        .mode-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            padding: 6px 0 10px;
+        }
+        .mode-btn {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            color: #475569;
+            box-shadow: none;
+        }
+        .mode-btn:active {
+            transform: scale(0.96);
+        }
+        .mode-btn.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+
+        /* 按钮行（底部保存/重置等） */
+        .action-row {
+            display: flex;
+            gap: 10px;
+            padding: 10px 0 4px;
+            flex-wrap: wrap;
+        }
+        .action-row button {
+            flex: 1;
+            min-width: 80px;
+            padding: 10px 16px;
+            font-size: 0.82rem;
+            border-radius: 12px;
+        }
+        .control-card.controls-disabled {
+            opacity: 0.58;
+        }
+        .control-card.controls-disabled input,
+        .control-card.controls-disabled select,
+        .control-card.controls-disabled .mode-btn,
+        .control-card.controls-disabled .action-row button,
+        .control-card.controls-disabled .send-row button {
+            cursor: not-allowed;
+        }
+        .control-card input:disabled,
+        .control-card select:disabled,
+        .control-card button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>
+        BLE 蓝牙调试器
+        <span class="badge">Web Bluetooth API</span>
+    </h1>
+    <div class="sub">
+        支持 Android Chrome / Edge · 扫描 BLE 设备 · 读取设备信息/电池电量
+    </div>
+
+    <div class="btn-group">
+        <button id="scanBtn" class="primary">扫描 & 连接设备</button>
+        <button id="disconnectBtn" disabled>断开连接</button>
+        <button id="readInfoBtn" disabled>读取设备信息</button>
+    </div>
+
+    <div class="info-card device-dashboard">
+        <div class="dashboard-header">
+            <div>
+                <div class="dashboard-title">设备状态</div>
+                <div class="dashboard-subtitle">BLE 连接与基础信息</div>
+            </div>
+            <div class="dashboard-status" id="bleStatus">
+                <span class="status"></span>
+                未初始化
+            </div>
+        </div>
+        <div class="dashboard-grid">
+            <div class="metric-tile">
+                <span class="metric-label">蓝牙名称</span>
+                <span class="metric-value" id="deviceName">—</span>
+            </div>
+            <div class="metric-tile">
+                <span class="metric-label">电量</span>
+                <span class="metric-value mono" id="batteryLevel">—</span>
+            </div>
+            <div class="metric-tile">
+                <span class="metric-label">制造商</span>
+                <span class="metric-value" id="manufacturer">—</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 控制卡片 -->
+    <div class="info-card control-card controls-disabled" id="controlCard">
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="text">文字</button>
+            <button class="tab-btn" data-tab="light">灯光</button>
+            <button class="tab-btn" data-tab="mic">麦克风</button>
+            <button class="tab-btn" data-tab="music">音乐</button>
+        </div>
+
+        <!-- 文字面板（协议 Byte11~13：文字内容/7种显示模式/颜色/渐变速度/滚动速度/亮度） -->
+        <div class="tab-panel active" id="panel-text">
+            <div class="panel-section">
+                <div class="panel-section-title">文字内容</div>
+                <div class="send-row">
+                    <input type="text" id="textContent" placeholder="输入文字...">
+                    <button id="textSendBtn" class="primary">发送</button>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-section-title">显示模式</div>
+                <div class="mode-grid" id="textModeGrid">
+                    <!-- JS 动态生成 7 个模式按钮 -->
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-section-title">样式设置</div>
+                <div class="effect-row color-row">
+                    <span class="effect-label">单色颜色</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="textColorToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="color-preview-box" id="textColorPreview" style="background: hsl(0,100%,50%);"></div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label"></span>
+                    <div class="effect-slider-wrap">
+                        <input type="range" class="hue-slider" id="textColor" min="0" max="255" value="0">
+                        <span class="hue-degree" id="textColorHue">色相: 0°</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">渐变速度</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="textGradientSpeedToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="textGradientSpeed" min="0" max="16" value="8">
+                        <span class="effect-value" id="textGradientSpeedVal">8</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">滚动速度</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="textScrollSpeedToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="textScrollSpeed" min="0" max="16" value="8">
+                        <span class="effect-value" id="textScrollSpeedVal">8</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">亮度</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="textBrightnessToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="textBrightness" min="0" max="16" value="8">
+                        <span class="effect-value" id="textBrightnessVal">8</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="action-row">
+                    <button id="textSaveBtn" class="primary">保存设置</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 灯光面板（协议 Byte7~10：16种灯光模式/自动模式/颜色/亮度/速度） -->
+        <div class="tab-panel" id="panel-light">
+            <div class="panel-section">
+                <div class="panel-section-title">灯光模式 (1~16)</div>
+                <div class="mode-grid" id="lightModeGrid">
+                    <!-- JS 动态生成 16 个模式按钮 -->
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-section-title">自动模式</div>
+                <div class="effect-row">
+                    <span class="effect-label">自动模式</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="lightAutoToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="lightAutoParam" min="5" max="255" value="128">
+                        <span class="effect-value" id="lightAutoParamVal">128</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-section-title">参数设置</div>
+                <div class="effect-row color-row">
+                    <span class="effect-label">颜色</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="lightColorToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="color-preview-box" id="lightColorPreview" style="background: hsl(0,100%,50%);"></div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label"></span>
+                    <div class="effect-slider-wrap">
+                        <input type="range" class="hue-slider" id="lightColor" min="0" max="255" value="0">
+                        <span class="hue-degree" id="lightColorHue">色相: 0°</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">亮度</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="lightBrightnessToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="lightBrightness" min="0" max="16" value="8">
+                        <span class="effect-value" id="lightBrightnessVal">8</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">速度</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="lightSpeedToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="lightSpeed" min="0" max="16" value="8">
+                        <span class="effect-value" id="lightSpeedVal">8</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="action-row">
+                    <button id="lightSaveBtn" class="primary">保存设置</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 麦克风面板（协议 Byte5~6：MIC音量/优先/10频EQ/回声/混响/魔音） -->
+        <div class="tab-panel" id="panel-mic">
+            <div class="panel-section">
+                <div class="panel-section-title">MIC 音量控制</div>
+                <div class="effect-row">
+                    <span class="effect-label">MIC 音量</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="micVolToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="micVol" min="0" max="32" value="16">
+                        <span class="effect-value" id="micVolVal">16</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">MIC 优先</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="micPriorityToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="micPriorityVal" min="0" max="32" value="0">
+                        <span class="effect-value" id="micPriorityValDisplay">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-section-title">均衡器 (EQ) 10 频点</div>
+                <div class="effect-row">
+                    <span class="effect-label">MIC EQ</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="micEqToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="eq-wrapper" id="micEqWrapper">
+                    <div class="eq-db-scale">
+                        <span>+12</span><span>+6</span><span>0</span><span>-6</span><span>-12</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-section-title">MIC 效果</div>
+                <div class="effect-row">
+                    <span class="effect-label">回声</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="micEchoToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="micEchoValue" min="0" max="32" value="0">
+                        <span class="effect-value" id="micEchoValueVal">0</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">混响</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="micReverbToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="micReverbSize" min="0" max="32" value="0">
+                        <span class="effect-value" id="micReverbSizeVal">0</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">魔音效果</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="micMagicToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <select class="effect-select" id="micMagicSound">
+                        <option value="0">关闭</option>
+                        <option value="1">儿童</option>
+                        <option value="2">女声</option>
+                        <option value="3">男声</option>
+                        <option value="4">电音</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="action-row">
+                    <button id="micResetBtn" class="danger">一键恢复默认</button>
+                    <button id="micSaveBtn" class="primary">保存设置</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 音乐面板（协议 Byte2~4：主音量/高低中音/10频点EQ/3D丽音/人声消除/虚拟低音/人声激励） -->
+        <div class="tab-panel" id="panel-music">
+            <div class="panel-section">
+                <div class="panel-section-title">主音量控制</div>
+                <div class="effect-row">
+                    <span class="effect-label">主音量</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="musicVolToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="musicVol" min="0" max="32" value="20">
+                        <span class="effect-value" id="musicVolVal">20</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">高音</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="musicTrebleToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="musicTreble" min="0" max="32" value="16">
+                        <span class="effect-value" id="musicTrebleVal">16</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">中音</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="musicMidToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="musicMid" min="0" max="32" value="16">
+                        <span class="effect-value" id="musicMidVal">16</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">低音</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="musicBassToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="musicBass" min="0" max="32" value="16">
+                        <span class="effect-value" id="musicBassVal">16</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-section-title">均衡器 (EQ) 10 频点</div>
+                <div class="effect-row">
+                    <span class="effect-label">音乐 EQ</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="musicEqToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="eq-wrapper" id="musicEqWrapper">
+                    <div class="eq-db-scale">
+                        <span>+12</span><span>+6</span><span>0</span><span>-6</span><span>-12</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-section-title">音效增强</div>
+                <div class="effect-row">
+                    <span class="effect-label">3D 丽音</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="music3dToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="music3dVal" min="0" max="32" value="0">
+                        <span class="effect-value" id="music3dValDisplay">0</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">人声消除</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="musicVocalCutToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="musicVocalCutVal" min="0" max="32" value="0">
+                        <span class="effect-value" id="musicVocalCutValDisplay">0</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">虚拟低音</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="musicVbToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="musicVbVal" min="0" max="32" value="0">
+                        <span class="effect-value" id="musicVbValDisplay">0</span>
+                    </div>
+                </div>
+                <div class="effect-row">
+                    <span class="effect-label">人声激励</span>
+                    <div class="effect-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="musicExciterToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="effect-slider-wrap">
+                        <input type="range" id="musicExciterVal" min="0" max="32" value="0">
+                        <span class="effect-value" id="musicExciterValDisplay">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="action-row">
+                    <button id="musicResetBtn" class="danger">一键恢复默认</button>
+                    <button id="musicSaveBtn" class="primary">保存设置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="log-title">
+        <span>实时日志</span>
+        <button id="clearLogBtn" class="clear-log">清空</button>
+    </div>
+    <div class="log-area" id="logPanel">
+        [系统] 等待操作，点击「扫描 & 连接设备」<br>
+        [提示] 需要 Android 手机蓝牙已开启，并使用 Chrome 等支持 Web Bluetooth 的浏览器<br>
+        [安全] 请确保页面通过 HTTPS 或 localhost 访问 (非 file 协议)
+    </div>
+    <footer>
+        基于 Web Bluetooth API | 需要用户手势触发 | 测试 BLE (低功耗蓝牙) 设备
+    </footer>
+</div>
+
+<script src="blue_api.js"></script>
+</body>
+</html>
