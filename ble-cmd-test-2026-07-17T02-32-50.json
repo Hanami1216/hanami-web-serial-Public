@@ -1,0 +1,907 @@
+{
+  "timestamp": "2026-07-17T02:32:50.250Z",
+  "options": {
+    "includeDangerous": true,
+    "timeoutMs": 2000
+  },
+  "summary": {
+    "passed": 54,
+    "warned": 7,
+    "failed": 0,
+    "skipped": 5,
+    "total": 66
+  },
+  "elapsed": "25.6",
+  "details": [
+    {
+      "cmd": 0,
+      "name": "SYS_ASK",
+      "status": "passed",
+      "params": [],
+      "txFrame": "AA 01 01 00 AC",
+      "response": [],
+      "rxFrame": "55 01 01 00 57"
+    },
+    {
+      "cmd": 1,
+      "name": "SYS_CHIP_SUPPORT_MAP",
+      "status": "warned",
+      "params": [],
+      "txFrame": "AA 01 01 01 AD",
+      "reason": "超时 2000ms"
+    },
+    {
+      "cmd": 2,
+      "name": "SYS_ASK_ALL",
+      "status": "warned",
+      "params": [],
+      "txFrame": "AA 01 01 02 AE",
+      "reason": "超时 2000ms"
+    },
+    {
+      "cmd": 3,
+      "name": "SYS_ASK_CMD",
+      "status": "warned",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 03 01 B1",
+      "reason": "超时 2000ms"
+    },
+    {
+      "cmd": 4,
+      "name": "SYS_ASK_MAP",
+      "status": "warned",
+      "params": [
+        255,
+        0,
+        63,
+        15,
+        128,
+        127,
+        128,
+        255,
+        255,
+        1,
+        135,
+        255,
+        0,
+        143,
+        0
+      ],
+      "txFrame": "AA 01 10 04 FF 00 3F 0F 80 7F 80 FF FF 01 87 FF 00 8F 00 9F",
+      "reason": "超时 2000ms"
+    },
+    {
+      "cmd": 5,
+      "name": "SYS_ASK_BAT",
+      "status": "passed",
+      "params": [],
+      "txFrame": "AA 01 01 05 B1",
+      "response": [
+        50
+      ],
+      "rxFrame": "55 01 02 05 32 8F"
+    },
+    {
+      "cmd": 6,
+      "name": "SYS_ASK_MCU_ID",
+      "status": "passed",
+      "params": [],
+      "txFrame": "AA 01 01 06 B2",
+      "response": [
+        137,
+        28,
+        130,
+        71,
+        56,
+        166
+      ],
+      "rxFrame": "55 01 07 06 89 1C 82 47 38 A6 AF"
+    },
+    {
+      "cmd": 7,
+      "name": "SYS_ASK_MID",
+      "status": "passed",
+      "params": [],
+      "txFrame": "AA 01 01 07 B3",
+      "response": [
+        18,
+        19,
+        20,
+        21
+      ],
+      "rxFrame": "55 01 05 07 12 13 14 15 B0"
+    },
+    {
+      "cmd": 16,
+      "name": "EQ_VOL_RESET",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 10 01 BE",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 10 01 69"
+    },
+    {
+      "cmd": 17,
+      "name": "EQ_VOL_VAL",
+      "status": "passed",
+      "params": [
+        1,
+        16
+      ],
+      "txFrame": "AA 01 03 11 01 10 D0",
+      "response": [
+        1,
+        16
+      ],
+      "rxFrame": "55 01 03 11 01 10 7B"
+    },
+    {
+      "cmd": 18,
+      "name": "EQ_VOL_TRE",
+      "status": "passed",
+      "params": [
+        1,
+        16
+      ],
+      "txFrame": "AA 01 03 12 01 10 D1",
+      "response": [
+        1,
+        16
+      ],
+      "rxFrame": "55 01 03 12 01 10 7C"
+    },
+    {
+      "cmd": 19,
+      "name": "EQ_VOL_MID",
+      "status": "passed",
+      "params": [
+        1,
+        16
+      ],
+      "txFrame": "AA 01 03 13 01 10 D2",
+      "response": [
+        1,
+        16
+      ],
+      "rxFrame": "55 01 03 13 01 10 7D"
+    },
+    {
+      "cmd": 20,
+      "name": "EQ_VOL_BASS",
+      "status": "passed",
+      "params": [
+        1,
+        16
+      ],
+      "txFrame": "AA 01 03 14 01 10 D3",
+      "response": [
+        1,
+        16
+      ],
+      "rxFrame": "55 01 03 14 01 10 7E"
+    },
+    {
+      "cmd": 21,
+      "name": "EQ_VOL_FRE_VAL",
+      "status": "passed",
+      "params": [
+        1,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12
+      ],
+      "txFrame": "AA 01 0C 15 01 0C 0C 0C 0C 0C 0C 0C 0C 0C 0C 45",
+      "response": [
+        1,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12
+      ],
+      "rxFrame": "55 01 0C 15 01 0C 0C 0C 0C 0C 0C 0C 0C 0C 0C F0"
+    },
+    {
+      "cmd": 24,
+      "name": "EQ_VOL_3D",
+      "status": "passed",
+      "params": [
+        1,
+        16
+      ],
+      "txFrame": "AA 01 03 18 01 10 D7",
+      "response": [
+        1,
+        16
+      ],
+      "rxFrame": "55 01 03 18 01 10 82"
+    },
+    {
+      "cmd": 25,
+      "name": "EQ_Voice_Cut",
+      "status": "passed",
+      "params": [
+        1,
+        16
+      ],
+      "txFrame": "AA 01 03 19 01 10 D8",
+      "response": [
+        1,
+        16
+      ],
+      "rxFrame": "55 01 03 19 01 10 83"
+    },
+    {
+      "cmd": 26,
+      "name": "EQ_VOL_VB",
+      "status": "passed",
+      "params": [
+        1,
+        16
+      ],
+      "txFrame": "AA 01 03 1A 01 10 D9",
+      "response": [
+        1,
+        16
+      ],
+      "rxFrame": "55 01 03 1A 01 10 84"
+    },
+    {
+      "cmd": 27,
+      "name": "EQ_Voice_EXCITER",
+      "status": "warned",
+      "params": [
+        1,
+        16
+      ],
+      "txFrame": "AA 01 03 1B 01 10 DA",
+      "reason": "超时 2000ms"
+    },
+    {
+      "cmd": 32,
+      "name": "EQ_VOL_PAUSE",
+      "status": "skipped",
+      "reason": "硬件不支持"
+    },
+    {
+      "cmd": 33,
+      "name": "EQ_VOL_PREV",
+      "status": "skipped",
+      "reason": "硬件不支持"
+    },
+    {
+      "cmd": 34,
+      "name": "EQ_VOL_NEXT",
+      "status": "skipped",
+      "reason": "硬件不支持"
+    },
+    {
+      "cmd": 35,
+      "name": "EQ_VOL_MODE",
+      "status": "skipped",
+      "reason": "硬件不支持"
+    },
+    {
+      "cmd": 36,
+      "name": "EQ_VOL_PLAY_MODE",
+      "status": "skipped",
+      "reason": "硬件不支持"
+    },
+    {
+      "cmd": 39,
+      "name": "EQ_VOL_SAVE",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 27 01 D5",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 27 01 80"
+    },
+    {
+      "cmd": 40,
+      "name": "EQ_MIC_RESET",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 28 01 D6",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 28 01 81"
+    },
+    {
+      "cmd": 41,
+      "name": "EQ_MIC_VAL",
+      "status": "passed",
+      "params": [
+        1,
+        16
+      ],
+      "txFrame": "AA 01 03 29 01 10 E8",
+      "response": [
+        1,
+        16
+      ],
+      "rxFrame": "55 01 03 29 01 10 93"
+    },
+    {
+      "cmd": 42,
+      "name": "EQ_MIC_priority",
+      "status": "passed",
+      "params": [
+        1,
+        16
+      ],
+      "txFrame": "AA 01 03 2A 01 10 E9",
+      "response": [
+        1,
+        16
+      ],
+      "rxFrame": "55 01 03 2A 01 10 94"
+    },
+    {
+      "cmd": 43,
+      "name": "EQ_MIC_FRE_VAL",
+      "status": "passed",
+      "params": [
+        1,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12
+      ],
+      "txFrame": "AA 01 0C 2B 01 0C 0C 0C 0C 0C 0C 0C 0C 0C 0C 5B",
+      "response": [
+        1,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12
+      ],
+      "rxFrame": "55 01 0C 2B 01 0C 0C 0C 0C 0C 0C 0C 0C 0C 0C 06"
+    },
+    {
+      "cmd": 44,
+      "name": "EQ_MIC_ECHO",
+      "status": "passed",
+      "params": [
+        1,
+        16
+      ],
+      "txFrame": "AA 01 03 2C 01 10 EB",
+      "response": [
+        1,
+        16
+      ],
+      "rxFrame": "55 01 03 2C 01 10 96"
+    },
+    {
+      "cmd": 45,
+      "name": "EQ_MIC_REVERB",
+      "status": "passed",
+      "params": [
+        1,
+        16
+      ],
+      "txFrame": "AA 01 03 2D 01 10 EC",
+      "response": [
+        1,
+        16
+      ],
+      "rxFrame": "55 01 03 2D 01 10 97"
+    },
+    {
+      "cmd": 46,
+      "name": "EQ_MIC_Magic_Sound",
+      "status": "passed",
+      "params": [
+        1,
+        4
+      ],
+      "txFrame": "AA 01 03 2E 01 04 E1",
+      "response": [
+        239
+      ],
+      "rxFrame": "55 01 02 2E EF 75"
+    },
+    {
+      "cmd": 55,
+      "name": "EQ_MIC_SAVE",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 37 01 E5",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 37 01 90"
+    },
+    {
+      "cmd": 56,
+      "name": "LIGHT_AUTO_EN",
+      "status": "warned",
+      "params": [
+        1,
+        128
+      ],
+      "txFrame": "AA 01 03 38 01 80 67",
+      "reason": "超时 2000ms"
+    },
+    {
+      "cmd": 57,
+      "name": "LIGHT_MODE_0",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 39 01 E7",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 39 01 92"
+    },
+    {
+      "cmd": 58,
+      "name": "0x3A",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 3A 01 E8",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 3A 01 93"
+    },
+    {
+      "cmd": 59,
+      "name": "0x3B",
+      "status": "warned",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 3B 01 E9",
+      "reason": "超时 2000ms"
+    },
+    {
+      "cmd": 60,
+      "name": "0x3C",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 3C 01 EA",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 3C 01 95"
+    },
+    {
+      "cmd": 61,
+      "name": "0x3D",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 3D 01 EB",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 3D 01 96"
+    },
+    {
+      "cmd": 62,
+      "name": "0x3E",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 3E 01 EC",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 3E 01 97"
+    },
+    {
+      "cmd": 63,
+      "name": "0x3F",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 3F 01 ED",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 3F 01 98"
+    },
+    {
+      "cmd": 64,
+      "name": "0x40",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 40 01 EE",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 40 01 99"
+    },
+    {
+      "cmd": 65,
+      "name": "0x41",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 41 01 EF",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 41 01 9A"
+    },
+    {
+      "cmd": 66,
+      "name": "0x42",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 42 01 F0",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 42 01 9B"
+    },
+    {
+      "cmd": 67,
+      "name": "0x43",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 43 01 F1",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 43 01 9C"
+    },
+    {
+      "cmd": 68,
+      "name": "0x44",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 44 01 F2",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 44 01 9D"
+    },
+    {
+      "cmd": 69,
+      "name": "0x45",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 45 01 F3",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 45 01 9E"
+    },
+    {
+      "cmd": 70,
+      "name": "0x46",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 46 01 F4",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 46 01 9F"
+    },
+    {
+      "cmd": 71,
+      "name": "0x47",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 47 01 F5",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 47 01 A0"
+    },
+    {
+      "cmd": 72,
+      "name": "0x48",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 48 01 F6",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 48 01 A1"
+    },
+    {
+      "cmd": 80,
+      "name": "LIGHT_COLOR_SET",
+      "status": "passed",
+      "params": [
+        1,
+        128
+      ],
+      "txFrame": "AA 01 03 50 01 80 7F",
+      "response": [
+        1,
+        128
+      ],
+      "rxFrame": "55 01 03 50 01 80 2A"
+    },
+    {
+      "cmd": 81,
+      "name": "LIGHT_VAL_SET",
+      "status": "passed",
+      "params": [
+        1,
+        8
+      ],
+      "txFrame": "AA 01 03 51 01 08 08",
+      "response": [
+        1,
+        8
+      ],
+      "rxFrame": "55 01 03 51 01 08 B3"
+    },
+    {
+      "cmd": 82,
+      "name": "LIGHT_SPEED_SET",
+      "status": "passed",
+      "params": [
+        1,
+        8
+      ],
+      "txFrame": "AA 01 03 52 01 08 09",
+      "response": [
+        1,
+        8
+      ],
+      "rxFrame": "55 01 03 52 01 08 B4"
+    },
+    {
+      "cmd": 87,
+      "name": "LIGHT_SAVE",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 57 01 05",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 57 01 B0"
+    },
+    {
+      "cmd": 88,
+      "name": "TEXT_Content",
+      "status": "passed",
+      "params": [
+        72,
+        105
+      ],
+      "txFrame": "AA 01 03 58 48 69 B7",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 58 01 B1"
+    },
+    {
+      "cmd": 89,
+      "name": "TEXT_MODE_0",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 59 01 07",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 59 01 B2"
+    },
+    {
+      "cmd": 90,
+      "name": "0x5A",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 5A 01 08",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 5A 01 B3"
+    },
+    {
+      "cmd": 91,
+      "name": "0x5B",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 5B 01 09",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 5B 01 B4"
+    },
+    {
+      "cmd": 92,
+      "name": "0x5C",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 5C 01 0A",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 5C 01 B5"
+    },
+    {
+      "cmd": 93,
+      "name": "0x5D",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 5D 01 0B",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 5D 01 B6"
+    },
+    {
+      "cmd": 94,
+      "name": "0x5E",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 5E 01 0C",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 5E 01 B7"
+    },
+    {
+      "cmd": 95,
+      "name": "0x5F",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 5F 01 0D",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 5F 01 B8"
+    },
+    {
+      "cmd": 104,
+      "name": "TEXT_COLOR_ONE",
+      "status": "passed",
+      "params": [
+        1,
+        128
+      ],
+      "txFrame": "AA 01 03 68 01 80 97",
+      "response": [
+        1,
+        128
+      ],
+      "rxFrame": "55 01 03 68 01 80 42"
+    },
+    {
+      "cmd": 105,
+      "name": "TEXT_COLOR_AUTO_Speed",
+      "status": "passed",
+      "params": [
+        1,
+        8
+      ],
+      "txFrame": "AA 01 03 69 01 08 20",
+      "response": [
+        1,
+        8
+      ],
+      "rxFrame": "55 01 03 69 01 08 CB"
+    },
+    {
+      "cmd": 106,
+      "name": "TEXT_Scroll_Speed",
+      "status": "passed",
+      "params": [
+        1,
+        8
+      ],
+      "txFrame": "AA 01 03 6A 01 08 21",
+      "response": [
+        1,
+        8
+      ],
+      "rxFrame": "55 01 03 6A 01 08 CC"
+    },
+    {
+      "cmd": 107,
+      "name": "TEXT_LIGHT",
+      "status": "passed",
+      "params": [
+        1,
+        8
+      ],
+      "txFrame": "AA 01 03 6B 01 08 22",
+      "response": [
+        1,
+        8
+      ],
+      "rxFrame": "55 01 03 6B 01 08 CD"
+    },
+    {
+      "cmd": 111,
+      "name": "TEXT_SAVE",
+      "status": "passed",
+      "params": [
+        1
+      ],
+      "txFrame": "AA 01 02 6F 01 1D",
+      "response": [
+        1
+      ],
+      "rxFrame": "55 01 02 6F 01 C8"
+    }
+  ]
+}

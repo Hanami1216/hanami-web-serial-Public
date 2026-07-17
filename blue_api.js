@@ -135,6 +135,7 @@
     let pendingSupportMapTimer = null;
     let featureStateReplyCount = 0;
     let supportedCommands = new Set();
+    let _cmdTestDrainState = null; // 多帧响应排空状态：{ frames, resolve, reject, idleTimer, overallTimer, idleMs }
     const featureRegistry = new Map();
     const modeGroups = new Map();
 
@@ -374,7 +375,9 @@
         }
 
         applyFeatureState(cmd, params);
-        _resolveCmdTestResponse(cmd, params);
+        if (!_feedDrainFrame(cmd, params, bytes)) {
+            _resolveCmdTestResponse(cmd, params, bytes);
+        }
     }
 
     async function initControlCharacteristics(server) {
@@ -1220,12 +1223,12 @@
     // ================================================================
     const _cmdTestPending = new Map();
 
-    function _resolveCmdTestResponse(cmd, params) {
+    function _resolveCmdTestResponse(cmd, params, rawFrame) {
         const entry = _cmdTestPending.get(cmd);
         if (entry) {
             clearTimeout(entry.timer);
             _cmdTestPending.delete(cmd);
-            entry.resolve(params);
+            entry.resolve({ params, rxFrame: rawFrame ? bytesToHex(rawFrame) : null });
         }
     }
 
@@ -1239,6 +1242,79 @@
         });
     }
 
+    /**
+     * 多帧响应排空：向收集器推送一帧，重置空闲计时器。
+     * 处于排空模式时返回 true（帧已被收集），否则返回 false（应由调用方处理）。
+     */
+    function _feedDrainFrame(cmd, params, bytes) {
+        const ds = _cmdTestDrainState;
+        if (!ds) return false;
+
+        ds.frames.push({ cmd, params, rxFrame: bytesToHex(bytes) });
+
+        clearTimeout(ds.idleTimer);
+        ds.idleTimer = setTimeout(() => {
+            if (_cmdTestDrainState === ds) {
+                _cmdTestDrainState = null;
+            }
+            clearTimeout(ds.overallTimer);
+            ds.resolve(ds.frames);
+        }, ds.idleMs);
+
+        return true;
+    }
+
+    /**
+     * 启动多帧响应排空收集，返回一个 Promise。
+     * 连续 idleMs 无新帧时 resolve（收集完成）；超过 overallTimeoutMs 时 reject（带已收集的部分帧）。
+     */
+    function _waitDrainComplete(idleMs = 150, overallTimeoutMs = 5000) {
+        return new Promise((resolve, reject) => {
+            if (_cmdTestDrainState) {
+                clearTimeout(_cmdTestDrainState.idleTimer);
+                clearTimeout(_cmdTestDrainState.overallTimer);
+            }
+
+            const overallTimer = setTimeout(() => {
+                if (_cmdTestDrainState) {
+                    const ds = _cmdTestDrainState;
+                    _cmdTestDrainState = null;
+                    clearTimeout(ds.idleTimer);
+                    reject(Object.assign(
+                        new Error(`多帧响应总超时 (${overallTimeoutMs}ms)`),
+                        { frames: ds.frames }
+                    ));
+                }
+            }, overallTimeoutMs);
+
+            _cmdTestDrainState = {
+                resolve,
+                reject,
+                idleTimer: null,
+                overallTimer,
+                frames: [],
+                idleMs
+            };
+        });
+    }
+
+    // ---- 测试结果 JSON 下载 ----
+    function _downloadTestResult(result) {
+        try {
+            const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ble-cmd-test-${ts}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            addLog(`[测试] 📥 结果已下载: ${a.download}`);
+        } catch (e) {
+            addLog(`[测试] ⚠ 下载结果失败: ${e.message}`, true);
+        }
+    }
+
     // ---- 测试规格：每个 CMD 的发送参数 & 危险标记 ----
     const CMD_TEST_SPEC = (function buildSpec() {
         const EQ_10BAND = [1, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12]; // 10段EQ全0dB
@@ -1247,9 +1323,9 @@
         // 系统命令 (0x00-0x07) — 芯片位图 byte0=0xFF 全部标为支持
         s[CMD.SYS_ASK]              = { params: [] };
         s[CMD.SYS_CHIP_SUPPORT_MAP] = { params: [] };
-        s[CMD.SYS_ASK_ALL]          = { params: [] };
+        s[CMD.SYS_ASK_ALL]          = { params: [], multiFrame: true };
         s[CMD.SYS_ASK_CMD]          = { params: [0x01] };
-        s[CMD.SYS_ASK_MAP]          = { params: () => buildSupportedMapBytes() };
+        s[CMD.SYS_ASK_MAP]          = { params: () => buildSupportedMapBytes(), multiFrame: true };
         s[CMD.SYS_ASK_BAT]          = { params: [] };
         s[CMD.SYS_ASK_MCU_ID]       = { params: [] };
         s[CMD.SYS_ASK_MID]          = { params: [] };
@@ -1320,7 +1396,7 @@
      * 选项：runCmdTest({ includeDangerous: true, timeoutMs: 3000 })
      */
     async function runCmdTest(options = {}) {
-        const { includeDangerous = false, timeoutMs = 2000 } = options;
+        const { includeDangerous = false, timeoutMs = 2000, drainIdleMs = 150 } = options;
 
         if (!gattServer || !gattServer.connected) {
             addLog('[测试] 设备未连接，请先扫描并连接', true);
@@ -1328,7 +1404,7 @@
         }
 
         addLog('══════════ CMD 回归测试 开始 ══════════');
-        const results = [];
+        const details = [];
         let passed = 0, failed = 0, warned = 0, skipped = 0;
         const t0 = performance.now();
 
@@ -1355,29 +1431,85 @@
 
             if (!spec) {
                 skipped++;
+                details.push({ cmd, name, status: 'skipped', reason: '无测试规格' });
                 addLog(`[测试] ⏭ ${name} — 无测试规格，跳过`);
                 continue;
             }
 
+            // 提前计算发送参数与数据帧（保证所有分支都能带上 txFrame）
+            const params = typeof spec.params === 'function' ? spec.params() : [...spec.params];
+            const txFrame = bytesToHex(buildBleFrame(cmd, params));
+
             if (!supportedCommands.has(cmd)) {
                 skipped++;
+                details.push({ cmd, name, status: 'skipped', params, txFrame, reason: '硬件不支持' });
                 addLog(`[测试] ⏭ ${name} — 硬件不支持，跳过`);
                 continue;
             }
 
             if (spec.danger && !includeDangerous) {
                 skipped++;
+                details.push({ cmd, name, status: 'skipped', params, txFrame, reason: spec.danger });
                 addLog(`[测试] ⏭ ${name} — ⚠${spec.danger}（传 includeDangerous:true 强制执行）`);
                 continue;
             }
 
-            const params = typeof spec.params === 'function' ? spec.params() : [...spec.params];
-
             if (spec.noResponse) {
                 // 只写命令：只验证发送
                 const sent = await sendCommand(cmd, params);
-                if (sent) { passed++; addLog(`[测试] ✅ ${name} — 发送成功（只写命令）`); }
-                else       { failed++; addLog(`[测试] ❌ ${name} — 发送失败`, true); }
+                if (sent) {
+                    passed++;
+                    details.push({ cmd, name, status: 'passed', params, txFrame, note: '只写命令' });
+                    addLog(`[测试] ✅ ${name} — 发送成功（只写命令）`);
+                } else {
+                    failed++;
+                    details.push({ cmd, name, status: 'failed', params, txFrame, reason: '发送失败' });
+                    addLog(`[测试] ❌ ${name} — 发送失败`, true);
+                }
+                continue;
+            }
+
+            if (spec.multiFrame) {
+                // 多帧响应命令：启动排空收集器（发送前启动，确保最早到达的帧也能被收集）
+                const drainPromise = _waitDrainComplete(drainIdleMs, timeoutMs * 2);
+                const sent = await sendCommand(cmd, params);
+
+                if (!sent) {
+                    // 发送失败 → 清理排空状态
+                    if (_cmdTestDrainState) {
+                        clearTimeout(_cmdTestDrainState.idleTimer);
+                        clearTimeout(_cmdTestDrainState.overallTimer);
+                        _cmdTestDrainState = null;
+                    }
+                    failed++;
+                    details.push({ cmd, name, status: 'failed', params, txFrame, reason: '发送失败' });
+                    addLog(`[测试] ❌ ${name} — 发送失败`, true);
+                    await new Promise(r => setTimeout(r, 80));
+                    continue;
+                }
+
+                try {
+                    const frames = await drainPromise;
+                    passed++;
+                    details.push({
+                        cmd, name, status: 'passed',
+                        params, txFrame,
+                        multiFrameCount: frames.length,
+                        multiFrames: frames
+                    });
+                    addLog(`[测试] ✅ ${name} — 收到 ${frames.length} 条响应帧`);
+                } catch (err) {
+                    warned++;
+                    details.push({
+                        cmd, name, status: 'warned',
+                        params, txFrame,
+                        reason: err.message,
+                        partialFrames: err.frames
+                    });
+                    addLog(`[测试] ⚠️ ${name} — ${err.message}`);
+                }
+
+                await new Promise(r => setTimeout(r, 80));
                 continue;
             }
 
@@ -1387,17 +1519,20 @@
 
             if (!sent) {
                 failed++;
+                details.push({ cmd, name, status: 'failed', params, txFrame, reason: '发送失败' });
                 addLog(`[测试] ❌ ${name} — 发送失败`, true);
                 _cmdTestPending.delete(cmd);
                 continue;
             }
 
             try {
-                const resp = await respPromise;
+                const { params: resp, rxFrame } = await respPromise;
                 passed++;
+                details.push({ cmd, name, status: 'passed', params, txFrame, response: resp, rxFrame });
                 addLog(`[测试] ✅ ${name} — 回复 PARAMS=[${resp.join(', ')}]`);
             } catch {
                 warned++;
+                details.push({ cmd, name, status: 'warned', params, txFrame, reason: `超时 ${timeoutMs}ms` });
                 addLog(`[测试] ⚠️ ${name} — 无回复（超时 ${timeoutMs}ms，可能为只写命令）`);
             }
 
@@ -1406,12 +1541,21 @@
         }
 
         const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
+        const summary = { passed, warned, failed, skipped, total: passed + warned + failed + skipped };
         addLog(`────────── 测试完成 ──────────`);
         addLog(`  ✅ 通过: ${passed}  ⚠️ 无回复: ${warned}  ❌ 失败: ${failed}  ⏭ 跳过: ${skipped}`);
         addLog(`  总耗时: ${elapsed}s`);
         addLog(`══════════════════════════════════`);
 
-        return { passed, warned, failed, skipped, elapsed };
+        const result = {
+            timestamp: new Date().toISOString(),
+            options: { includeDangerous, timeoutMs, drainIdleMs },
+            summary,
+            elapsed,
+            details
+        };
+        _downloadTestResult(result);
+        return result;
     }
 
     // 暴露到全局，方便控制台调用
