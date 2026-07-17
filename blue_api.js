@@ -1178,14 +1178,14 @@
         micMagicSelect?.addEventListener('change', async function() {
             if (this.disabled || micMagicToggle?.disabled) return;
             const enabled = getChecked('micMagicToggle', true) ? 1 : 0;
-            const value = toByte(this.value, 0, 5);
-            const names = ['关闭','儿童','女声','男声','电音','魔音'];
+            const value = toByte(this.value, 0, 4);
+            const names = ['关闭','儿童','女声','男声','电音'];
             const ok = await sendCommand(CMD.EQ_MIC_Magic_Sound, [enabled, value]);
             if (ok) addLog(`[麦克风] 魔音效果: ${names[parseInt(this.value)] || this.value}`);
         });
         micMagicToggle?.addEventListener('change', async function() {
             if (this.disabled || micMagicSelect?.disabled) return;
-            const value = toByte(micMagicSelect?.value || 0, 0, 5);
+            const value = toByte(micMagicSelect?.value || 0, 0, 4);
             const ok = await sendCommand(CMD.EQ_MIC_Magic_Sound, [this.checked ? 1 : 0, value]);
             if (ok) addLog(`[麦克风] 魔音效果: ${this.checked ? '开启' : '关闭'} 值=${value}`);
         });
@@ -1194,7 +1194,7 @@
                 elements: [micMagicSelect, micMagicToggle],
                 apply(params = []) {
                     if (params.length > 0) micMagicToggle.checked = params[0] === 1;
-                    if (params.length > 1) micMagicSelect.value = String(toByte(params[1], 0, 5));
+                    if (params.length > 1) micMagicSelect.value = String(toByte(params[1], 0, 4));
                 }
             });
         }
@@ -1273,7 +1273,7 @@
         s[CMD.EQ_VOL_PREV]      = { params: [1], danger: '上一曲' };
         s[CMD.EQ_VOL_NEXT]      = { params: [1], danger: '下一曲' };
         s[CMD.EQ_VOL_MODE]      = { params: [1], danger: '切换播放模式' };
-        s[CMD.EQ_VOL_PLAY_MODE] = { params: [1], danger: '切换播放模式' };
+        s[CMD.EQ_VOL_PLAY_MODE] = { params: [1, 0], danger: '切换播放模式' };
         s[CMD.EQ_VOL_SAVE]      = { params: [1], danger: '写入Flash(保存)' };
 
         // MIC
@@ -1283,7 +1283,7 @@
         s[CMD.EQ_MIC_FRE_VAL]    = { params: EQ_10BAND };
         s[CMD.EQ_MIC_ECHO]       = { params: [1, 16] };
         s[CMD.EQ_MIC_REVERB]     = { params: [1, 16] };
-        s[CMD.EQ_MIC_Magic_Sound]= { params: [1, 1] };
+        s[CMD.EQ_MIC_Magic_Sound]= { params: [1, 4] };
         s[CMD.EQ_MIC_SAVE]       = { params: [1], danger: '写入Flash(保存)' };
 
         // 灯光
@@ -1299,7 +1299,7 @@
         }
 
         // 文字
-        s[CMD.TEXT_Content]          = { params: [72, 105], noResponse: true }; // "Hi"
+        s[CMD.TEXT_Content]          = { params: [72, 105] }; // "Hi"
         s[CMD.TEXT_COLOR_ONE]        = { params: [1, 128] };
         s[CMD.TEXT_COLOR_AUTO_Speed] = { params: [1, 8] };
         s[CMD.TEXT_Scroll_Speed]     = { params: [1, 8] };
