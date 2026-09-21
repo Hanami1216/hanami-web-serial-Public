@@ -19,8 +19,8 @@ export function displayToActual(displayValue: number): number {
   return Math.round(
     ((displayValue - ParamRange.EQ.MIN) /
       (ParamRange.EQ.MAX - ParamRange.EQ.MIN)) *
-      (DISPLAY_TO_ACTUAL.MAX - DISPLAY_TO_ACTUAL.MIN) +
-      DISPLAY_TO_ACTUAL.MIN,
+    (DISPLAY_TO_ACTUAL.MAX - DISPLAY_TO_ACTUAL.MIN) +
+    DISPLAY_TO_ACTUAL.MIN,
   );
 }
 
@@ -29,8 +29,8 @@ export function actualToDisplay(actualValue: number): number {
   return Math.round(
     ((actualValue - DISPLAY_TO_ACTUAL.MIN) /
       (DISPLAY_TO_ACTUAL.MAX - DISPLAY_TO_ACTUAL.MIN)) *
-      (ParamRange.EQ.MAX - ParamRange.EQ.MIN) +
-      ParamRange.EQ.MIN,
+    (ParamRange.EQ.MAX - ParamRange.EQ.MIN) +
+    ParamRange.EQ.MIN,
   );
 }
 
@@ -159,7 +159,7 @@ export const serialEqBands: EqBand[] = [
   },
   {
     label: '16kHz',
-    freq: 160000,
+    freq: 16000,
     min: ParamRange.EQ.MIN,
     max: ParamRange.EQ.MAX,
     value: ParamRange.EQ.DEFAULT,

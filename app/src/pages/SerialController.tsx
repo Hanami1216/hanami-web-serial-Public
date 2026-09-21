@@ -21,7 +21,8 @@ import '../styles/utilities.css';
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Compute the `--percent` CSS custom property value for a slider. */
+/** Compute the `--percent` CSS custom property value for a slider.
+ *  返回**无单位数值** 0–100；utilities.css 用 calc(... * 1%) 换算成百分比。 */
 function sliderPercent(
   value: number,
   min: number,
@@ -54,6 +55,12 @@ export default function SerialController() {
   const [showRawData, setShowRawData] = useState(false);
 
   const receiveRef = useRef<HTMLTextAreaElement>(null);
+  /** 状态提示的恢复定时器（连续操作/卸载时清理，避免定时器竞态）。 */
+  const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  /** 事件回调里需要读到最新的连接状态（避免 stale closure）。 */
+  const isConnectedRef = useRef(false);
 
   // ---- serial hook -----------------------------------------------------
 
@@ -112,6 +119,37 @@ export default function SerialController() {
         receiveRef.current.scrollHeight;
     }
   }, [receiveLines]);
+
+  // ---- keep refs in sync / clean up timers ------------------------------
+
+  useEffect(() => {
+    isConnectedRef.current = isConnected;
+  }, [isConnected]);
+
+  useEffect(
+    () => () => {
+      if (statusTimerRef.current) {
+        clearTimeout(statusTimerRef.current);
+      }
+    },
+    [],
+  );
+
+  /** 提示一条操作结果，2 秒后回落到当前连接状态。 */
+  function flashStatus(text: string) {
+    setStatus(text, 'var(--status-connected-bg)');
+    if (statusTimerRef.current) {
+      clearTimeout(statusTimerRef.current);
+    }
+    statusTimerRef.current = setTimeout(() => {
+      setStatus(
+        isConnectedRef.current ? '已连接' : '未连接',
+        isConnectedRef.current
+          ? 'var(--status-connected-bg)'
+          : 'var(--status-idle-bg)',
+      );
+    }, 2000);
+  }
 
   // ---- EQ change handler -----------------------------------------------
 
@@ -198,7 +236,7 @@ export default function SerialController() {
     } catch (error) {
       setStatus(
         `连接错误: ${(error as Error).message}`,
-        '#e74c3c',
+        'var(--status-disconnected-bg)',
       );
     }
   }
@@ -209,7 +247,7 @@ export default function SerialController() {
     } catch (error) {
       setStatus(
         `断开连接错误: ${(error as Error).message}`,
-        '#e74c3c',
+        'var(--status-disconnected-bg)',
       );
     }
   }
@@ -230,7 +268,7 @@ export default function SerialController() {
     } catch (error) {
       setStatus(
         `发送错误: ${(error as Error).message}`,
-        '#e74c3c',
+        'var(--status-disconnected-bg)',
       );
     }
   }
@@ -253,17 +291,11 @@ export default function SerialController() {
         params,
       );
       await sendFrame(frame);
-      setStatus(
-        `功率PA设置已发送: ${val}`,
-        '#2ecc71',
-      );
-      setTimeout(() => {
-        setStatus('已连接', '#2ecc71');
-      }, 2000);
+      flashStatus(`功率PA设置已发送: ${val}`);
     } catch (error) {
       setStatus(
         `发送错误: ${(error as Error).message}`,
-        '#e74c3c',
+        'var(--status-disconnected-bg)',
       );
     }
   }
@@ -286,17 +318,11 @@ export default function SerialController() {
         params,
       );
       await sendFrame(frame);
-      setStatus(
-        `开机默认音量设置已发送: ${val}`,
-        '#2ecc71',
-      );
-      setTimeout(() => {
-        setStatus('已连接', '#2ecc71');
-      }, 2000);
+      flashStatus(`开机默认音量设置已发送: ${val}`);
     } catch (error) {
       setStatus(
         `发送错误: ${(error as Error).message}`,
-        '#e74c3c',
+        'var(--status-disconnected-bg)',
       );
     }
   }
@@ -312,7 +338,7 @@ export default function SerialController() {
     } catch (error) {
       setStatus(
         `发送错误: ${(error as Error).message}`,
-        '#e74c3c',
+        'var(--status-disconnected-bg)',
       );
     }
   }
@@ -329,13 +355,7 @@ export default function SerialController() {
     setPaValue(ParamRange.PA.DEFAULT);
     setVolume(ParamRange.VOLUME.DEFAULT);
 
-    setStatus('已重置所有参数到默认值', '#2ecc71');
-    setTimeout(() => {
-      setStatus(
-        isConnected ? '已连接' : '未连接',
-        isConnected ? '#2ecc71' : '#ecf0f1',
-      );
-    }, 2000);
+    flashStatus('已重置所有参数到默认值');
   }
 
   // ---- baud-rate select -------------------------------------------------
@@ -370,31 +390,49 @@ export default function SerialController() {
   // ---- render -----------------------------------------------------------
 
   return (
-    <div className="font-sans max-w-[1200px] mx-auto p-6 max-sm:p-2 max-sm:h-screen max-sm:overflow-hidden bg-[var(--bg-body)] text-[var(--text-body)]">
-      <h1 className="text-center mb-6 mt-0 text-[var(--text-body)] max-sm:text-2xl max-sm:sticky max-sm:top-0 max-sm:bg-[var(--bg-body)] max-sm:z-[100] max-sm:py-2.5 max-sm:m-0">
-        串口EQ均衡器
-      </h1>
+    <div className="font-sans min-h-screen bg-[var(--bg-body)] text-[var(--text-body)]">
+      {/* ---- 顶栏 ---- */}
+      <header className="sticky top-0 z-50 border-b border-[var(--header-border)] bg-[var(--header-bg)] px-4 py-3 backdrop-blur-md max-sm:px-3">
+        <div className="mx-auto flex max-w-[1400px] items-center gap-2.5">
+          <span
+            className={`status-dot${isConnected ? ' connected' : ''}`}
+          />
+          <h1 className="m-0 truncate text-lg font-semibold max-sm:text-base">
+            串口EQ均衡器
+          </h1>
+        </div>
+      </header>
 
-      <div className="flex flex-col gap-6 max-sm:h-[calc(100vh-60px)] max-sm:overflow-y-auto">
-        <div className="flex gap-6 flex-wrap max-lg:flex-col h-[calc(100vh-100px)] max-sm:h-auto max-sm:min-h-full">
-          {/* ---- Left: EQ Card -------------------------------------- */}
-          <div className="glass-panel rounded-xl p-4 max-sm:p-2 flex-1 min-w-[400px] max-lg:min-w-full max-w-full overflow-y-auto flex flex-col">
-            <h2 className="text-[var(--text-body)] mt-0 max-sm:text-lg">
-              均衡器设置
-            </h2>
+      {/* ---- 主体：宽屏两栏，窄屏单栏 ---- */}
+      <main className="mx-auto grid max-w-[1400px] gap-5 p-4 xl:grid-cols-[minmax(0,1fr)_380px] xl:p-6 max-sm:gap-4 max-sm:p-3">
+        <div className="flex min-w-0 flex-col gap-5 max-sm:gap-4">
+          {/* ---- 均衡器卡片 ---- */}
+          <section className="glass-panel rounded-xl p-5 max-sm:p-3">
+            <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+              <h2 className="m-0 text-base font-semibold">
+                均衡器设置
+              </h2>
+              <span className="text-xs text-[var(--text-muted)]">
+                15 段 · 显示值 -12 ~ +12 dB（0 为平直）
+              </span>
+            </div>
 
-            <div className="flex gap-5 items-end h-[280px] my-4 overflow-x-auto pb-2.5 max-sm:h-[300px] max-sm:pb-5" id="eqContainer">
-              <div className="flex flex-col justify-between h-[240px] pr-2.5 text-xs text-[var(--text-muted)] mb-5 max-sm:hidden">
-                <div className="flex items-center h-12">+12dB</div>
-                <div className="flex items-center h-12">+6dB</div>
-                <div className="flex items-center h-12">0dB</div>
-                <div className="flex items-center h-12">-6dB</div>
-                <div className="flex items-center h-12">-12dB</div>
-              </div>
+            <div className="overflow-x-auto pb-1">
+              <div className="flex min-w-max gap-1.5" id="eqContainer">
+                {/* 刻度：与滑块行程对齐 */}
+                <div className="flex h-[220px] w-[40px] shrink-0 flex-col justify-between pr-2 text-right text-[11px] leading-none text-[var(--eq-scale-text)] max-sm:hidden">
+                  <span>+12</span>
+                  <span>+6</span>
+                  <span>0</span>
+                  <span>-6</span>
+                  <span>-12</span>
+                </div>
 
-              {eqBands.map((band, index) => (
-                <div className="flex flex-col items-center gap-2 h-full max-sm:min-w-[60px]" key={index}>
-                  <div className="flex flex-col items-center h-full relative">
+                {eqBands.map((band, index) => (
+                  <div
+                    className="flex w-[52px] shrink-0 flex-col items-center gap-2"
+                    key={band.label}
+                  >
                     <input
                       type="range"
                       id={`eqSlider${index}`}
@@ -402,12 +440,10 @@ export default function SerialController() {
                       max={ParamRange.EQ.MAX}
                       step="1"
                       value={band.value}
-                      className="eq-slider-vertical w-[50px] h-[220px] px-[5px] my-2.5 max-sm:h-[200px] max-sm:w-[5px] max-sm:mx-[5px] max-sm:my-0"
+                      aria-label={`${band.label} 增益`}
+                      className="eq-slider-vertical h-[220px] w-[18px] cursor-pointer"
                       onChange={(e) =>
-                        handleEqChange(
-                          index,
-                          parseInt(e.target.value),
-                        )
+                        handleEqChange(index, parseInt(e.target.value))
                       }
                     />
                     <input
@@ -417,50 +453,57 @@ export default function SerialController() {
                       max={ParamRange.EQ.MAX}
                       step="1"
                       value={band.value}
-                      className="w-[60px] max-sm:w-[50px] max-sm:text-xs max-sm:p-1 text-center p-1.5 rounded border border-[var(--input-border)] bg-[var(--input-bg)] text-[var(--input-text)]"
+                      aria-label={`${band.label} 增益数值`}
+                      className="glass-input w-full rounded-md py-1 text-center text-xs"
                       onChange={(e) =>
-                        handleEqChange(
-                          index,
-                          parseInt(e.target.value),
-                        )
+                        handleEqChange(index, parseInt(e.target.value))
                       }
                     />
-                    <div className="font-bold mt-2 max-sm:mt-0 text-sm max-sm:text-xs text-center text-[var(--text-body)] bg-white/80 px-2 py-1 max-sm:px-1 max-sm:py-0.5 rounded shadow-sm">
+                    <div className="text-center text-xs font-medium text-[var(--text-muted)]">
                       {band.label}
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
-            <div className="flex gap-2 mt-4 flex-wrap justify-center max-sm:flex-col" />
-
-            <div className="flex gap-2 flex-wrap items-center mb-4 justify-center max-sm:flex-col max-sm:items-stretch"
-              style={{ marginTop: '16px' } as CSSProperties}
-            >
+            <div className="mt-5 flex flex-wrap gap-2.5 max-sm:flex-col">
               <button
-                className="glass-btn-primary min-w-[200px] max-sm:w-full px-4 py-2.5 rounded-lg text-sm"
+                className="glass-btn-primary rounded-lg px-5 py-2.5 text-sm max-sm:w-full"
                 id="sendEqBtn"
                 disabled={!isConnected}
                 onClick={handleSendEq}
               >
-                发送EQ设置 (命令: 0x01)
+                发送 EQ 设置（命令 0x01）
               </button>
               <button
-                className="glass-btn-secondary min-w-[200px] max-sm:w-full px-4 py-2.5 rounded-lg text-sm"
+                className="glass-btn-secondary rounded-lg px-5 py-2.5 text-sm max-sm:w-full"
                 id="resetEqBtn"
                 onClick={handleReset}
               >
-                重置
+                重置为平直
               </button>
             </div>
+          </section>
 
-            <div className="flex gap-2 flex-wrap items-center mb-4 justify-center max-sm:flex-col max-sm:items-stretch"
-              style={{ marginTop: '16px' } as CSSProperties}
-            >
-              <div className="flex items-center gap-2.5 w-full">
-                <label htmlFor="paValue" className="text-sm text-[var(--text-body)] whitespace-nowrap">
-                  功率PA设置 (命令: 0x02):
+          {/* ---- 音效参数卡片 ---- */}
+          <section className="glass-panel rounded-xl p-5 max-sm:p-3">
+            <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+              <h2 className="m-0 text-base font-semibold">音效参数</h2>
+              <span className="text-xs text-[var(--text-muted)]">
+                功率 PA 0 ~ 64 · 默认音量 0 ~ 15
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-4">
+
+              {/* 功率 PA */}
+              <div className="grid grid-cols-2 items-center gap-x-3 gap-y-2 sm:grid-cols-[132px_minmax(0,1fr)_72px_64px]">
+                <label
+                  htmlFor="paValue"
+                  className="col-span-2 text-sm whitespace-nowrap sm:col-span-1"
+                >
+                  功率 PA
                 </label>
                 <input
                   type="range"
@@ -469,7 +512,8 @@ export default function SerialController() {
                   max={ParamRange.PA.MAX}
                   step="1"
                   value={paValue}
-                  className="slider-thumb flex-1 h-5"
+                  aria-label="功率 PA"
+                  className="slider-thumb col-span-2 h-2 w-full sm:col-span-1"
                   style={paSliderStyle}
                   onChange={handlePaSliderChange}
                 />
@@ -480,11 +524,12 @@ export default function SerialController() {
                   max={ParamRange.PA.MAX}
                   step="1"
                   value={paValue}
-                  className="w-[60px] text-center p-1.5 rounded border border-[var(--input-border)] bg-[var(--input-bg)] text-[var(--input-text)]"
+                  aria-label="功率 PA 数值"
+                  className="glass-input w-full rounded-md py-1.5 text-center text-sm"
                   onChange={handlePaInputChange}
                 />
                 <button
-                  className="glass-btn-primary min-w-[80px] px-4 py-2 rounded-md text-sm"
+                  className="glass-btn-primary rounded-md px-3 py-2 text-sm"
                   id="sendPaBtn"
                   disabled={!isConnected}
                   onClick={handleSendPa}
@@ -492,14 +537,14 @@ export default function SerialController() {
                   发送
                 </button>
               </div>
-            </div>
 
-            <div className="flex gap-2 flex-wrap items-center mb-4 justify-center max-sm:flex-col max-sm:items-stretch"
-              style={{ marginTop: '16px' } as CSSProperties}
-            >
-              <div className="flex items-center gap-2.5 w-full">
-                <label htmlFor="defaultVolume" className="text-sm text-[var(--text-body)] whitespace-nowrap">
-                  开机默认音量 (命令: 0x03):
+              {/* 开机默认音量 */}
+              <div className="grid grid-cols-2 items-center gap-x-3 gap-y-2 sm:grid-cols-[132px_minmax(0,1fr)_72px_64px]">
+                <label
+                  htmlFor="defaultVolume"
+                  className="col-span-2 text-sm whitespace-nowrap sm:col-span-1"
+                >
+                  开机默认音量
                 </label>
                 <input
                   type="range"
@@ -508,7 +553,8 @@ export default function SerialController() {
                   max={ParamRange.VOLUME.MAX}
                   step="1"
                   value={volume}
-                  className="slider-thumb flex-1 h-5"
+                  aria-label="开机默认音量"
+                  className="slider-thumb col-span-2 h-2 w-full sm:col-span-1"
                   style={volSliderStyle}
                   onChange={handleVolSliderChange}
                 />
@@ -519,11 +565,12 @@ export default function SerialController() {
                   max={ParamRange.VOLUME.MAX}
                   step="1"
                   value={volume}
-                  className="w-[60px] text-center p-1.5 rounded border border-[var(--input-border)] bg-[var(--input-bg)] text-[var(--input-text)]"
+                  aria-label="开机默认音量数值"
+                  className="glass-input w-full rounded-md py-1.5 text-center text-sm"
                   onChange={handleVolInputChange}
                 />
                 <button
-                  className="glass-btn-primary min-w-[80px] px-4 py-2 rounded-md text-sm"
+                  className="glass-btn-primary rounded-md px-3 py-2 text-sm"
                   id="sendVolumeBtn"
                   disabled={!isConnected}
                   onClick={handleSendVolume}
@@ -531,31 +578,35 @@ export default function SerialController() {
                   发送
                 </button>
               </div>
+
+              <div className="border-t border-[var(--divider)] pt-4">
+                <button
+                  className="glass-btn-secondary w-full rounded-lg px-4 py-2.5 text-sm"
+                  id="readAllBtn"
+                  disabled={!isConnected}
+                  onClick={handleReadAll}
+                >
+                  读取全部信息（命令 0x80）
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+          {/* ---- 串口通信卡片 ---- */}
+          <aside className="glass-panel rounded-xl p-5 max-sm:p-3">
+            <div className="mb-4 flex items-baseline justify-between gap-x-3">
+              <h2 className="m-0 text-base font-semibold">串口通信</h2>
+              <span className="text-xs text-[var(--text-muted)]">
+                {baudRate === 'custom'
+                  ? `${customBaudRate || '—'} bps`
+                  : `${baudRate} bps`}
+              </span>
             </div>
 
-            <div className="flex gap-2 flex-wrap items-center mb-4 justify-center max-sm:flex-col max-sm:items-stretch"
-              style={{ marginTop: '16px' } as CSSProperties}
-            >
+            <div className="grid grid-cols-2 gap-2.5">
               <button
-                className="w-full !bg-green-500 !border-green-500 hover:!bg-green-600 min-w-[200px] max-sm:w-full px-4 py-2.5 rounded-lg text-sm text-white"
-                id="readAllBtn"
-                disabled={!isConnected}
-                onClick={handleReadAll}
-              >
-                读取全部信息 (命令: 0x80)
-              </button>
-            </div>
-          </div>
-
-          {/* ---- Right: Serial Card --------------------------------- */}
-          <div className="glass-panel rounded-xl p-4 max-sm:p-2 flex-1 min-w-[400px] max-lg:min-w-full max-w-full flex flex-col h-full max-sm:min-h-auto">
-            <h2 className="text-[var(--text-body)] mt-0 max-sm:text-lg">
-              串口通信
-            </h2>
-
-            <div className="flex gap-2 flex-wrap items-center mb-4 justify-center max-sm:flex-col max-sm:items-stretch">
-              <button
-                className="glass-btn-primary min-w-[200px] max-sm:w-full px-4 py-2.5 rounded-lg text-sm"
+                className="glass-btn-primary rounded-lg px-4 py-2.5 text-sm"
                 id="connectBtn"
                 disabled={isConnected}
                 onClick={handleConnect}
@@ -563,20 +614,29 @@ export default function SerialController() {
                 连接串口
               </button>
               <button
-                className="glass-btn-secondary min-w-[200px] max-sm:w-full px-4 py-2.5 rounded-lg text-sm !bg-[#fff5f5] !border-[#fecaca] !text-[#b91c1c] hover:!bg-[#fee2e2]"
+                className="glass-btn-danger rounded-lg px-4 py-2.5 text-sm"
                 id="disconnectBtn"
                 disabled={!isConnected}
                 onClick={handleDisconnect}
               >
                 断开连接
               </button>
+            </div>
 
-              <div className="flex gap-2 items-center">
+            {/* 波特率 */}
+            <div className="mt-4 grid gap-2">
+              <label
+                htmlFor="baudRate"
+                className="text-xs text-[var(--text-muted)]"
+              >
+                波特率
+              </label>
+              <div className="flex gap-2">
                 <select
                   id="baudRate"
                   value={baudRate}
                   onChange={handleBaudRateChange}
-                  className="p-2 px-3 rounded-md border border-[var(--input-border)] text-sm bg-[var(--input-bg)] text-[var(--input-text)] cursor-pointer disabled:bg-[#f5f5f5] disabled:cursor-not-allowed"
+                  className="glass-input cursor-pointer rounded-md px-3 py-2 text-sm"
                 >
                   <option value="9600">9600</option>
                   <option value="19200">19200</option>
@@ -585,29 +645,30 @@ export default function SerialController() {
                   <option value="115200">115200</option>
                   <option value="custom">自定义</option>
                 </select>
-                <input
-                  type="number"
-                  id="customBaudRate"
-                  placeholder="自定义波特率"
-                  style={
-                    ({
-                      display:
-                        baudRate === 'custom'
-                          ? 'block'
-                          : 'none',
-                    }) as CSSProperties
-                  }
-                  min="1200"
-                  max="4000000"
-                  value={customBaudRate}
-                  className="w-[120px] p-2 px-3 rounded-md border border-[var(--input-border)] text-sm bg-[var(--input-bg)] text-[var(--input-text)] disabled:bg-[#f5f5f5] disabled:cursor-not-allowed"
-                  onChange={(e) =>
-                    setCustomBaudRate(e.target.value)
-                  }
-                />
+                {baudRate === 'custom' && (
+                  <input
+                    type="number"
+                    id="customBaudRate"
+                    placeholder="1200 - 4000000"
+                    min="1200"
+                    max="4000000"
+                    value={customBaudRate}
+                    aria-label="自定义波特率"
+                    className="glass-input min-w-0 flex-1 rounded-md px-3 py-2 text-sm"
+                    onChange={(e) =>
+                      setCustomBaudRate(e.target.value)
+                    }
+                  />
+                )}
               </div>
+            </div>
 
-              <div className="flex items-center gap-2 text-sm">
+            {/* 显示选项 */}
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+              <label
+                htmlFor="hexDisplay"
+                className="flex cursor-pointer items-center gap-2"
+              >
                 <input
                   type="checkbox"
                   id="hexDisplay"
@@ -615,10 +676,14 @@ export default function SerialController() {
                   onChange={(e) =>
                     setHexDisplay(e.target.checked)
                   }
+                  className="h-4 w-4 cursor-pointer accent-[var(--btn-primary-bg)]"
                 />
-                <label htmlFor="hexDisplay">
-                  十六进制显示
-                </label>
+                十六进制显示
+              </label>
+              <label
+                htmlFor="showRawData"
+                className="flex cursor-pointer items-center gap-2"
+              >
                 <input
                   type="checkbox"
                   id="showRawData"
@@ -626,56 +691,62 @@ export default function SerialController() {
                   onChange={(e) =>
                     setShowRawData(e.target.checked)
                   }
+                  className="h-4 w-4 cursor-pointer accent-[var(--btn-primary-bg)]"
                 />
-                <label htmlFor="showRawData">
-                  显示原始数据
-                </label>
-              </div>
-
-              <button
-                className="glass-btn-secondary min-w-[200px] max-sm:w-full px-4 py-2.5 rounded-lg text-sm"
-                id="clearReceiveBtn"
-                onClick={clearReceive}
-              >
-                清空接收区
-              </button>
+                显示原始数据
+              </label>
             </div>
 
             <div
-              className="p-3 rounded-md bg-[var(--panel-bg)] mb-4 text-sm text-[var(--text-body)]"
+              className="mt-4 flex items-start gap-2 rounded-lg border border-[var(--glass-border)] px-3 py-2 text-sm"
               id="status"
               style={
                 { backgroundColor: statusBg } as CSSProperties
               }
             >
-              {statusText}
-            </div>
-
-            <div className="w-full flex-1 flex flex-col min-h-0">
-              <textarea
-                id="receiveArea"
-                ref={receiveRef}
-                readOnly
-                value={receiveLines.join('\n')}
-                placeholder="接收的数据将显示在这里..."
-                className="w-full flex-1 min-h-[100px] p-3 rounded-md border border-[var(--terminal-border)] font-mono resize-none bg-[var(--terminal-bg)] text-[var(--terminal-text)] box-border overflow-y-auto break-words text-sm leading-[1.4]"
+              <span
+                className={`status-dot mt-1 shrink-0${isConnected ? ' connected' : ''}`}
               />
+              <span className="min-w-0 break-words">
+                {statusText}
+              </span>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <footer className="mt-6 p-4 text-center text-[var(--footer-text)] text-sm border-t border-[var(--footer-border)] bg-[var(--footer-bg)] max-sm:sticky max-sm:bottom-0 max-sm:z-[100] max-sm:m-0">
-        <p className="my-1">
+            <textarea
+              id="receiveArea"
+              ref={receiveRef}
+              readOnly
+              value={receiveLines.join('\n')}
+              placeholder="接收的数据将显示在这里…"
+              aria-label="串口接收区"
+              className="mt-4 h-[240px] w-full resize-none overflow-y-auto break-words rounded-lg border border-[var(--terminal-border)] bg-[var(--terminal-bg)] p-3 font-mono text-xs leading-[1.5] text-[var(--terminal-text)] outline-none max-sm:h-[180px]"
+            />
+
+            <button
+              className="glass-btn-secondary mt-3 w-full rounded-lg px-4 py-2.5 text-sm"
+              id="clearReceiveBtn"
+              onClick={clearReceive}
+            >
+              清空接收区
+            </button>
+          </aside>
+        </main>
+
+      <footer className="border-t border-[var(--footer-border)] bg-[var(--footer-bg)] px-4 py-6 text-center text-xs text-[var(--footer-text)]">
+        <p className="m-0">
           &copy; 2024 广州智造音响设备有限公司 版权所有
         </p>
-        <p className="my-1">
+        <p className="m-0 mt-1">
           技术支持：
-          <a href="mailto:support@example.com" className="text-[var(--btn-primary-bg)] no-underline hover:underline">
+          <a
+            href="mailto:support@example.com"
+            className="text-[var(--btn-primary-bg)] no-underline hover:underline"
+          >
             support@example.com
           </a>
+          <span className="mx-2">|</span>
+          版本 1.0.0
         </p>
-        <p className="my-1">版本：1.0.0</p>
       </footer>
     </div>
   );

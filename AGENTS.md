@@ -25,7 +25,7 @@ AI 编程助手进入本仓库前必读。细节遵循「链接不复制」原�
 
 - 入口 `app/src/main.tsx` → `App.tsx`（BrowserRouter，3 条路由）：
   - `/` → `pages/Home.tsx`（着陆页、兼容性检查）
-  - `/serial` → `pages/SerialController.tsx`（串口连接 + 15 段 EQ + PA + 默认音量）
+  - `/serial` → `pages/SerialController.tsx`（顶栏 + 响应式两栏：均衡器/音效参数 + 串口通信）
   - `/bluetooth` → `pages/BluetoothController.tsx`（BLE 四页签：文字/灯光/麦克风/音乐）
 - 业务逻辑集中在两个 Hook：
   - `hooks/useSerial.ts` — Web Serial 收发、帧缓冲状态机、READ_ALL 全量回读、指数退避重试
@@ -69,8 +69,11 @@ AI 编程助手进入本仓库前必读。细节遵循「链接不复制」原�
 
 ## 已知坑（动手改代码前先看）
 
-- ⚠️ `app/src/index.css` 目前**没有任何文件 import**（`main.tsx` 只引 `App.tsx`，三个页面只引 `utilities.css`）——Tailwind 指令、设计 Token、`.glass-*` 组件类可能都没进构建。改样式前先确认并修复 import
-- `index.css` 与 `utilities.css` 重复定义滑块轨道渐变，变量名还不一致（`--slider-percent` vs `--percent`，页面注入的是 `--percent`）
-- `utils/eqMapping.ts` 中 `serialEqBands` 的 16kHz `freq` 误写为 `160000`；串口 15 段频点（25/40/63…）与 BLE 10 段（31/63/125…）是两套表，不要混用
+- **布局不要用 `h-[calc(100vh-…)]` 锁死高度**：串口页曾因此让卡片被 flex 压扁、EQ 区塌成 20px 全不可见。现为「顶栏 + `main` 自然流 + 响应式 grid（`xl` 起两栏）」，改动时沿用
+- **`--percent` 是无单位数值（0–100）**：由页面内联 style 注入，`styles/utilities.css` 必须写成 `calc(var(--percent, 50) * 1%)`。若直接当百分比用（`var(--percent, 50%)`），非法长度值会让整条 `background` 失效——填充段与空槽段一起消失，只剩元素底色
+- **`.dark` 深色 Token 必须写在 `@layer` 之外**：本仓库实测放进 `@layer base` 时构建产物中不含该规则（切主题会静默失效）；同时要在 `:root` / `.dark` 声明 `color-scheme`，否则深色下半透明控件背景会透出原生白色底
+- **`position: sticky` 不要直接用在 grid item 上**：本仓库实测侧栏 sticky 不钉住（`items-start` 与否均如此），现已改回普通流；需要吸顶先做小样验证
+- 串口 15 段频点（25/40/63…）与 BLE 10 段（31/63/125…）是两套表，不要混用；`utils/eqMapping.ts` 的 16kHz 频点曾误写为 `160000`（已修）
+- `styles/utilities.css` 里仍有 BLE 页面遗留的硬编码色（toggle、色块、电平表），与新约定「颜色全走 Design Token」不一致，尚未统一治理
 - `vercel.json` 仍是旧静态托管配置（`@vercel/static` + `/` 重写到根 `index.html`），未覆盖 `app/` 的 Vite 部署——调整部署前先确认现状
 - `useBle` 暴露的 `registerFeature / getModeGroup / setModeGroup` 疑似重构遗留 API（页面从未调用 `registerFeature`），改动前确认是否还有人用

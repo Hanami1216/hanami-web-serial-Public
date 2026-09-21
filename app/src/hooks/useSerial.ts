@@ -100,7 +100,7 @@ export function useSerial(options: UseSerialOptions) {
   // ---- reactive state --------------------------------------------------
   const [isConnected, setIsConnected] = useState(false);
   const [statusText, setStatusText] = useState('未连接');
-  const [statusBg, setStatusBg] = useState('#ecf0f1');
+  const [statusBg, setStatusBg] = useState('var(--status-idle-bg)');
   const [receiveLines, setReceiveLines] = useState<string[]>([]);
 
   // ---- internal helpers ------------------------------------------------
@@ -110,7 +110,7 @@ export function useSerial(options: UseSerialOptions) {
     setReceiveLines((prev) => [...prev, ...lines]);
   }
 
-  /** Set connection status text + background colour. */
+  /** Set connection status text + background colour (设计 Token 变量). */
   function setStatus(text: string, bg: string) {
     setStatusText(text);
     setStatusBg(bg);
@@ -356,7 +356,7 @@ export function useSerial(options: UseSerialOptions) {
             console.error('读取数据错误:', readError);
             setStatus(
               `读取错误: ${(readError as Error).message}`,
-              '#e74c3c',
+              'var(--status-disconnected-bg)',
             );
           }
         } finally {
@@ -370,7 +370,7 @@ export function useSerial(options: UseSerialOptions) {
           console.error('获取读取流错误:', streamError);
           setStatus(
             `流错误: ${(streamError as Error).message}`,
-            '#e74c3c',
+            'var(--status-disconnected-bg)',
           );
           // prevent tight loop on persistent stream error
           await new Promise((r) => setTimeout(r, 1000));
@@ -389,7 +389,7 @@ export function useSerial(options: UseSerialOptions) {
    * Error messages are in Chinese, matching the original app.js.
    */
   async function connect(baudRate: number): Promise<void> {
-    setStatus('正在连接...', '#f39c12');
+    setStatus('正在连接...', 'var(--status-pending-bg)');
 
     // 1. request port
     let port: SerialPort;
@@ -444,7 +444,7 @@ export function useSerial(options: UseSerialOptions) {
 
     setStatus(
       `已连接: ${deviceInfo} (${baudRate}bps)`,
-      '#2ecc71',
+      'var(--status-connected-bg)',
     );
     setIsConnected(true);
 
@@ -479,7 +479,7 @@ export function useSerial(options: UseSerialOptions) {
    * the reader, and close the port.
    */
   async function disconnect(): Promise<void> {
-    setStatus('正在断开...', '#f39c12');
+    setStatus('正在断开...', 'var(--status-pending-bg)');
 
     keepReadingRef.current = false;
 
@@ -503,7 +503,7 @@ export function useSerial(options: UseSerialOptions) {
       }
     }
 
-    setStatus('已断开连接', '#ecf0f1');
+    setStatus('已断开连接', 'var(--status-idle-bg)');
     setIsConnected(false);
   }
 

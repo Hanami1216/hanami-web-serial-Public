@@ -9,6 +9,10 @@
 
 @layer base {
   :root {
+    /* 显式声明配色方案：原生控件（input/select/textarea/滚动条）
+       的 UA 外观跟随主题，避免深色下半透明背景透出白色底 */
+    color-scheme: light;
+
     /* Body */
     --bg-body: #f5f7fb;
     --text-body: #1e293b;
@@ -18,6 +22,7 @@
     --glass-bg: rgba(255, 255, 255, 0.92);
     --glass-border: #e2e8f0;
     --glass-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 
     /* 输入框 */
     --input-bg: #ffffff;
@@ -83,16 +88,34 @@
     /* 强调色 */
     --text-amber: #d97706;
 
+    /* 状态行（语义色：空闲 / 进行中） */
+    --status-idle-bg: #f1f5f9;
+    --status-pending-bg: #fef3c7;
+
+    /* 状态圆点 / EQ 刻度 */
+    --status-dot-idle: #94a3b8;
+    --status-dot-connected: #22c55e;
+    --eq-scale-text: #94a3b8;
+
     /* 危险按钮 */
     --btn-danger-bg: #fff5f5;
     --btn-danger-text: #b91c1c;
     --btn-danger-border: #fecaca;
     --btn-danger-hover: #fee2e2;
   }
+}
 
-  .dark {
-    /* Body */
-    --bg-body: #0f172a;
+/* ===================================================================
+   深色主题 Token（.dark）
+   ⚠ 保持在 @layer 之外：本仓库实测把 .dark 写进 @layer base 时，
+   构建产物中不含该规则（切主题会静默失效），移出后才正常。勿移回。
+   =================================================================== */
+
+.dark {
+  color-scheme: dark;
+
+  /* Body */
+  --bg-body: #0f172a;
     --text-body: #f1f5f9;
     --text-muted: #94a3b8;
 
@@ -100,6 +123,7 @@
     --glass-bg: rgba(255, 255, 255, 0.1);
     --glass-border: rgba(255, 255, 255, 0.1);
     --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 
     /* Glass input */
     --input-bg: rgba(0, 0, 0, 0.2);
@@ -165,13 +189,23 @@
     /* Amber accent */
     --text-amber: #fbbf24;
 
+    /* 状态行（语义色：空闲 / 进行中） */
+    --status-idle-bg: rgba(255, 255, 255, 0.08);
+    --status-pending-bg: rgba(245, 158, 11, 0.2);
+
+    /* 状态圆点 / EQ 刻度 */
+    --status-dot-idle: #64748b;
+    --status-dot-connected: #4ade80;
+    --eq-scale-text: #94a3b8;
+
     /* Danger button */
     --btn-danger-bg: rgba(239, 68, 68, 0.15);
     --btn-danger-text: #fca5a5;
     --btn-danger-border: rgba(239, 68, 68, 0.3);
     --btn-danger-hover: rgba(239, 68, 68, 0.25);
-  }
+}
 
+@layer base {
   /* ---- 全局基础 ---- */
   body {
     background-color: var(--bg-body);
@@ -187,7 +221,7 @@
 .glass-panel {
   background-color: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
+  box-shadow: var(--glass-shadow), var(--glass-inset);
   @apply backdrop-blur-md;
 }
 
@@ -203,9 +237,11 @@
   color: var(--input-text);
   @apply outline-none transition-all;
 }
+
 .glass-input::placeholder {
   color: var(--input-placeholder);
 }
+
 .glass-input:focus {
   border-color: var(--input-focus);
   --tw-ring-color: var(--input-focus);
@@ -219,6 +255,7 @@
   border: 1px solid var(--btn-primary-border);
   @apply cursor-pointer font-medium transition-all active:scale-95;
 }
+
 .glass-btn-primary:hover {
   background-color: var(--btn-primary-hover);
 }
@@ -230,6 +267,7 @@
   border: 1px solid var(--btn-secondary-border);
   @apply cursor-pointer font-medium transition-all active:scale-95;
 }
+
 .glass-btn-secondary:hover {
   background-color: var(--btn-secondary-hover);
 }
@@ -241,6 +279,7 @@
   border: 1px solid var(--btn-danger-border);
   @apply cursor-pointer font-medium transition-all active:scale-95;
 }
+
 .glass-btn-danger:hover {
   background-color: var(--btn-danger-hover);
 }
@@ -251,6 +290,7 @@
 .glass-btn-danger {
   @apply shadow-sm;
 }
+
 .glass-btn-primary:disabled,
 .glass-btn-secondary:disabled,
 .glass-btn-danger:disabled {
@@ -263,60 +303,31 @@
   @apply appearance-none h-2 rounded-lg outline-none;
   background-color: var(--slider-track);
 }
-.slider-thumb::-webkit-slider-runnable-track {
-  @apply h-2 rounded-lg;
-  background: linear-gradient(
-    to right,
-    var(--slider-thumb-bg) 0%,
-    var(--slider-thumb-bg) var(--slider-percent, 50%),
-    var(--slider-track-empty) var(--slider-percent, 50%),
-    var(--slider-track-empty) 100%
-  );
-}
-.slider-thumb::-webkit-slider-thumb {
-  @apply appearance-none w-4 h-4 rounded-full cursor-pointer shadow-lg transition-transform;
-  background: var(--slider-thumb-bg);
-  margin-top: -4px;
-}
-.slider-thumb::-webkit-slider-thumb:hover {
-  @apply scale-110;
-}
-.slider-thumb::-moz-range-progress {
-  background-color: var(--slider-thumb-bg);
-}
-.slider-thumb::-moz-range-track {
-  background-color: var(--slider-track-empty);
-}
-.slider-thumb::-moz-range-thumb {
-  @apply w-4 h-4 rounded-full cursor-pointer shadow-lg;
-  background: var(--slider-thumb-bg);
-  border: none;
-}
 
-/* ---- 垂直 EQ 滑块 ---- */
+/* ---- 垂直 EQ 滑块 ----
+   使用标准写法（writing-mode + direction）代替已废弃的
+   appearance: slider-vertical（Chrome 提示该关键字将被移除）。 */
 .eq-slider-vertical {
-  -webkit-appearance: slider-vertical;
-  appearance: slider-vertical;
+  -webkit-appearance: none;
+  appearance: none;
+  writing-mode: vertical-lr;
+  direction: rtl;
   @apply cursor-pointer;
   background: transparent;
 }
-.eq-slider-vertical::-webkit-slider-runnable-track {
-  background: var(--eq-slider-track);
-}
-.eq-slider-vertical::-webkit-slider-thumb {
-  @apply appearance-none;
-  background: var(--slider-thumb-bg);
-  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.3);
-}
+
+/* 注意：滑块的浏览器私有伪元素（轨道渐变 / 拇指 / 填充）统一由
+   styles/utilities.css 维护，此处不要重复定义，避免两处漂移。 */
 
 /* ---- 状态指示点 ---- */
 .status-dot {
   @apply inline-block w-2.5 h-2.5 rounded-full;
-  background-color: #94a3b8;
+  background-color: var(--status-dot-idle);
 }
+
 .status-dot.connected {
-  background-color: #22c55e;
-  box-shadow: 0 0 4px #22c55e;
+  background-color: var(--status-dot-connected);
+  box-shadow: 0 0 4px var(--status-dot-connected);
 }
 
 /* ---- 分隔线 ---- */
@@ -330,14 +341,17 @@
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--scrollbar-track);
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
 }

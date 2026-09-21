@@ -8,8 +8,10 @@
    1. 浏览器私有滑块伪元素
    =================================================================== */
 
-/* ---- 基础水平滑块 thumb ---- */
-input[type="range"]::-webkit-slider-thumb {
+/* ---- 基础水平滑块 thumb（兜底，给没有专门类名的 range） ----
+   用 :where() 把特异性降到 0，保证 .slider-thumb / .eq-slider-vertical
+   等专门规则一定能覆盖它。 */
+:where(input[type="range"])::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 22px;
   height: 22px;
@@ -28,10 +30,8 @@ input.hue-slider {
   height: 18px;
   border-radius: 10px;
   outline: none;
-  background: linear-gradient(
-    to right,
-    #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000
-  );
+  background: linear-gradient(to right,
+      #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
   flex: none;
 }
 
@@ -47,16 +47,34 @@ input.hue-slider::-webkit-slider-thumb {
   transition: background 0.1s ease;
 }
 
-/* ---- 水平滑块渐变轨道（用 CSS 变量 --percent 驱动） ---- */
+/* ---- 水平滑块（PA / 音量）：由 CSS 变量 --percent 驱动 ----
+   页面注入的是**无单位数值 0–100**，所以此处必须 calc(... * 1%) 换算；
+   若直接写 var(--percent, 50%) 会因非法长度值导致整条 background 失效
+   （填充段与空槽段一并消失，只剩元素自身底色）。 */
+.slider-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--slider-thumb-bg);
+  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.3);
+  cursor: pointer;
+  margin-top: -4px;
+  transition: transform 0.15s ease;
+}
+
+.slider-thumb::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
+
 .slider-thumb::-webkit-slider-runnable-track {
   height: 8px;
-  background: linear-gradient(
-    to right,
-    var(--slider-thumb-bg) 0%,
-    var(--slider-thumb-bg) var(--percent, 50%),
-    var(--slider-track-empty) var(--percent, 50%),
-    var(--slider-track-empty) 100%
-  );
+  background: linear-gradient(to right,
+      var(--slider-thumb-bg) 0%,
+      var(--slider-thumb-bg) calc(var(--percent, 50) * 1%),
+      var(--slider-track-empty) calc(var(--percent, 50) * 1%),
+      var(--slider-track-empty) 100%);
   border-radius: 4px;
 }
 
@@ -103,21 +121,52 @@ input.hue-slider::-webkit-slider-thumb {
   display: none;
 }
 
-/* ---- 垂直 EQ 滑块 ---- */
-.eq-slider-vertical {
-  -webkit-appearance: slider-vertical;
-  appearance: slider-vertical;
-  cursor: pointer;
-  background: transparent;
-}
-
+/* ---- 垂直 EQ 滑块（基础样式见 index.css 的 .eq-slider-vertical） ----
+   writing-mode: vertical-lr 下，轨道沿纵向填充，宽度即轨道粗细；
+   轨道与拇指尺寸在此统一收口，页面只负责高宽。 */
 .eq-slider-vertical::-webkit-slider-runnable-track {
+  width: 6px;
+  height: 100%;
   background: var(--eq-slider-track);
+  border-radius: 3px;
 }
 
 .eq-slider-vertical::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
   background: var(--slider-thumb-bg);
-  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.35);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.eq-slider-vertical::-webkit-slider-thumb:hover {
+  transform: scale(1.12);
+}
+
+.eq-slider-vertical::-moz-range-track {
+  width: 6px;
+  background: var(--eq-slider-track);
+  border-radius: 3px;
+}
+
+.eq-slider-vertical::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: var(--slider-thumb-bg);
+}
+
+/* ---- 键盘焦点环（保留 a11y，替换浏览器默认橙框） ---- */
+.eq-slider-vertical:focus-visible,
+.slider-thumb:focus-visible {
+  outline: 2px solid var(--input-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* ===================================================================
@@ -162,11 +211,11 @@ input.hue-slider::-webkit-slider-thumb {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
-.toggle-switch input:checked + .toggle-slider {
+.toggle-switch input:checked+.toggle-slider {
   background: #3b82f6;
 }
 
-.toggle-switch input:checked + .toggle-slider::before {
+.toggle-switch input:checked+.toggle-slider::before {
   transform: translateX(22px);
 }
 
@@ -183,7 +232,7 @@ input.hue-slider::-webkit-slider-thumb {
   bottom: 3px;
 }
 
-.effect-toggle .toggle-switch input:checked + .toggle-slider::before {
+.effect-toggle .toggle-switch input:checked+.toggle-slider::before {
   transform: translateX(18px);
 }
 
@@ -192,13 +241,16 @@ input.hue-slider::-webkit-slider-thumb {
    =================================================================== */
 
 @keyframes pulseGlow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 6px rgba(59, 130, 246, 0.5),
-                0 0 20px rgba(59, 130, 246, 0.2);
+      0 0 20px rgba(59, 130, 246, 0.2);
   }
+
   50% {
     box-shadow: 0 0 14px rgba(59, 130, 246, 0.7),
-                0 0 36px rgba(59, 130, 246, 0.35);
+      0 0 36px rgba(59, 130, 246, 0.35);
   }
 }
 
@@ -215,6 +267,7 @@ input.hue-slider::-webkit-slider-thumb {
     opacity: 0;
     transform: translateY(14px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -241,11 +294,9 @@ input.hue-slider::-webkit-slider-thumb {
   height: 560px;
   top: -210px;
   left: -150px;
-  background: radial-gradient(
-    circle,
-    rgba(148, 181, 255, 0.24) 0%,
-    rgba(148, 181, 255, 0) 72%
-  );
+  background: radial-gradient(circle,
+      rgba(148, 181, 255, 0.24) 0%,
+      rgba(148, 181, 255, 0) 72%);
 }
 
 .page::after {
@@ -253,11 +304,9 @@ input.hue-slider::-webkit-slider-thumb {
   height: 520px;
   top: 220px;
   right: -160px;
-  background: radial-gradient(
-    circle,
-    rgba(182, 201, 222, 0.22) 0%,
-    rgba(182, 201, 222, 0) 74%
-  );
+  background: radial-gradient(circle,
+      rgba(182, 201, 222, 0.22) 0%,
+      rgba(182, 201, 222, 0) 74%);
 }
 
 /* ===================================================================
