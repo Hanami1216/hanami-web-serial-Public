@@ -1,0 +1,272 @@
+/* ===================================================================
+   Utilities — Tailwind 无法表达的规则
+   浏览器私有伪元素 · 动画 · 伪元素交互 · 复杂渐变
+   不含任何可用 Tailwind 表达的属性（颜色、间距、布局、尺寸等）
+   =================================================================== */
+
+/* ===================================================================
+   1. 浏览器私有滑块伪元素
+   =================================================================== */
+
+/* ---- 基础水平滑块 thumb ---- */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--slider-thumb-bg, #3b82f6);
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.3);
+}
+
+/* ---- 色相渐变条 ---- */
+input.hue-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 200px;
+  max-width: none;
+  height: 18px;
+  border-radius: 10px;
+  outline: none;
+  background: linear-gradient(
+    to right,
+    #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000
+  );
+  flex: none;
+}
+
+input.hue-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--thumb-color, white);
+  border: 3px solid #334155;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: background 0.1s ease;
+}
+
+/* ---- 水平滑块渐变轨道（用 CSS 变量 --percent 驱动） ---- */
+.slider-thumb::-webkit-slider-runnable-track {
+  height: 8px;
+  background: linear-gradient(
+    to right,
+    var(--slider-thumb-bg) 0%,
+    var(--slider-thumb-bg) var(--percent, 50%),
+    var(--slider-track-empty) var(--percent, 50%),
+    var(--slider-track-empty) 100%
+  );
+  border-radius: 4px;
+}
+
+.slider-thumb::-moz-range-progress {
+  background-color: var(--slider-thumb-bg);
+  height: 8px;
+}
+
+.slider-thumb::-moz-range-track {
+  background-color: var(--slider-track-empty);
+  height: 8px;
+}
+
+.slider-thumb::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: var(--slider-thumb-bg);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+.slider-thumb::-ms-fill-lower {
+  background: var(--slider-thumb-bg);
+}
+
+.slider-thumb::-ms-fill-upper {
+  background: var(--slider-track-empty);
+}
+
+.slider-thumb::-ms-thumb {
+  width: 20px;
+  height: 20px;
+  background: var(--slider-thumb-bg);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.slider-thumb:focus {
+  outline: none;
+}
+
+.slider-thumb::-ms-tooltip {
+  display: none;
+}
+
+/* ---- 垂直 EQ 滑块 ---- */
+.eq-slider-vertical {
+  -webkit-appearance: slider-vertical;
+  appearance: slider-vertical;
+  cursor: pointer;
+  background: transparent;
+}
+
+.eq-slider-vertical::-webkit-slider-runnable-track {
+  background: var(--eq-slider-track);
+}
+
+.eq-slider-vertical::-webkit-slider-thumb {
+  background: var(--slider-thumb-bg);
+  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.3);
+}
+
+/* ===================================================================
+   2. 开关组件（伪元素 + 相邻兄弟选择器）
+   =================================================================== */
+
+.toggle-switch {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  display: inline-block;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #cbd5e1;
+  border-radius: 26px;
+  transition: 0.25s;
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.25s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: #3b82f6;
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(22px);
+}
+
+/* ---- 效果面板开关（小号变体） ---- */
+.effect-toggle .toggle-switch {
+  width: 40px;
+  height: 22px;
+}
+
+.effect-toggle .toggle-slider::before {
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+}
+
+.effect-toggle .toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(18px);
+}
+
+/* ===================================================================
+   3. 动画
+   =================================================================== */
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(59, 130, 246, 0.5),
+                0 0 20px rgba(59, 130, 246, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 14px rgba(59, 130, 246, 0.7),
+                0 0 36px rgba(59, 130, 246, 0.35);
+  }
+}
+
+.color-block.selected {
+  border-color: #3b82f6;
+  animation: pulseGlow 1.8s ease-in-out infinite;
+  transform: scale(1.08);
+  opacity: 1;
+  filter: none;
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===================================================================
+   4. 着陆页径向渐变伪元素背景
+   =================================================================== */
+
+.page::before,
+.page::after {
+  content: "";
+  position: absolute;
+  inset: auto;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 999px;
+  filter: blur(24px);
+}
+
+.page::before {
+  width: 560px;
+  height: 560px;
+  top: -210px;
+  left: -150px;
+  background: radial-gradient(
+    circle,
+    rgba(148, 181, 255, 0.24) 0%,
+    rgba(148, 181, 255, 0) 72%
+  );
+}
+
+.page::after {
+  width: 520px;
+  height: 520px;
+  top: 220px;
+  right: -160px;
+  background: radial-gradient(
+    circle,
+    rgba(182, 201, 222, 0.22) 0%,
+    rgba(182, 201, 222, 0) 74%
+  );
+}
+
+/* ===================================================================
+   5. 电平指示条
+   =================================================================== */
+
+.level-meter-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #22c55e, #f59e0b, #ef4444);
+  transition: width 0.2s ease;
+}

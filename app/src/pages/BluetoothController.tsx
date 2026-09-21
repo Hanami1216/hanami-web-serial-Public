@@ -8,10 +8,9 @@ import {
 import {
   createTenBandEq,
   displayToWireDb,
-  wireToDisplayDb,
 } from '../utils/eqMapping';
 import type { EqBand } from '../utils/eqMapping';
-import '../styles/ble.css';
+import '../styles/utilities.css';
 
 // =============================================================================
 // Helper type for control state tracking (used in stateRef for async handlers)
@@ -28,16 +27,38 @@ export default function BluetoothController() {
   const ble = useBle();
 
   // ======================================================================
-  // Tab state
+  // Shared style fragments (used across helper render functions)
   // ======================================================================
-  const [activeTab, setActiveTab] = useState('text');
+
+  const btnBase =
+    'glass-btn-secondary rounded-full px-5 py-2.5 text-sm font-medium max-sm:w-full max-sm:py-3 max-sm:text-sm';
+  const btnPrimary =
+    'glass-btn-primary rounded-full px-5 py-2.5 text-sm font-medium max-sm:w-full max-sm:py-3 max-sm:text-sm';
+  const btnDanger =
+    'glass-btn-danger rounded-full px-5 py-2.5 text-sm font-medium max-sm:w-full max-sm:py-3 max-sm:text-sm';
+
+  const infoCardClass =
+    'bg-[var(--panel-bg)] border border-[var(--panel-border)] rounded-[20px] p-4 my-4 max-sm:p-3 max-sm:rounded-2xl max-sm:my-3';
+
+  const tabBtnBase =
+    'flex-1 bg-transparent border-none border-b-2 border-transparent -mb-0.5 px-3 py-2.5 text-sm font-medium text-slate-500 rounded-none shadow-none cursor-pointer transition-all max-sm:text-xs max-sm:px-1 max-sm:py-2.5 max-sm:whitespace-nowrap max-sm:min-w-0';
+
+  const effectRowClass =
+    'flex items-center gap-2.5 py-[7px] border-b border-slate-50 flex-wrap min-h-[40px] last:border-b-0';
 
   // ======================================================================
-  // Text panel state
+  // Alert banner (deprecated – kept for dev visibility)
   // ======================================================================
+  // (Removed as it was empty in original)
+
+  // ======================================================================
+  // State
+  // ======================================================================
+
+  const [activeTab, setActiveTab] = useState('text');
   const [textContent, setTextContent] = useState('');
   const [textColorEnabled, setTextColorEnabled] = useState(false);
-  const [textColorValue, setTextColorValue] = useState(0);
+  const [textColorValue, setTextColorValue] = useState(128);
   const [textGradientEnabled, setTextGradientEnabled] = useState(false);
   const [textGradientSpeed, setTextGradientSpeed] = useState(8);
   const [textScrollEnabled, setTextScrollEnabled] = useState(false);
@@ -46,449 +67,119 @@ export default function BluetoothController() {
   const [textBrightnessValue, setTextBrightnessValue] = useState(8);
   const [textModeActive, setTextModeActive] = useState<number | null>(null);
 
-  // ======================================================================
-  // Light panel state
-  // ======================================================================
   const [lightModeActive, setLightModeActive] = useState<number | null>(null);
   const [lightAutoEnabled, setLightAutoEnabled] = useState(false);
   const [lightAutoParam, setLightAutoParam] = useState(128);
   const [lightColorEnabled, setLightColorEnabled] = useState(false);
-  const [lightColorValue, setLightColorValue] = useState(0);
+  const [lightColorValue, setLightColorValue] = useState(128);
   const [lightBrightnessEnabled, setLightBrightnessEnabled] = useState(false);
   const [lightBrightnessValue, setLightBrightnessValue] = useState(8);
   const [lightSpeedEnabled, setLightSpeedEnabled] = useState(false);
   const [lightSpeedValue, setLightSpeedValue] = useState(8);
 
-  // ======================================================================
-  // Mic panel state
-  // ======================================================================
   const [micVolEnabled, setMicVolEnabled] = useState(false);
   const [micVolValue, setMicVolValue] = useState(16);
   const [micPriorityEnabled, setMicPriorityEnabled] = useState(false);
-  const [micPriorityValue, setMicPriorityValue] = useState(0);
-  const [micEqEnabled, setMicEqEnabled] = useState(false);
+  const [micPriorityValue, setMicPriorityValue] = useState(16);
   const [micEqBands, setMicEqBands] = useState<EqBand[]>(() =>
     createTenBandEq(),
   );
+  const [micEqEnabled, setMicEqEnabled] = useState(false);
   const [micEchoEnabled, setMicEchoEnabled] = useState(false);
-  const [micEchoValue, setMicEchoValue] = useState(0);
+  const [micEchoValue, setMicEchoValue] = useState(16);
   const [micReverbEnabled, setMicReverbEnabled] = useState(false);
-  const [micReverbValue, setMicReverbValue] = useState(0);
+  const [micReverbValue, setMicReverbValue] = useState(16);
   const [micMagicEnabled, setMicMagicEnabled] = useState(false);
   const [micMagicValue, setMicMagicValue] = useState(0);
 
-  // ======================================================================
-  // Music panel state
-  // ======================================================================
   const [musicVolEnabled, setMusicVolEnabled] = useState(false);
-  const [musicVolValue, setMusicVolValue] = useState(20);
+  const [musicVolValue, setMusicVolValue] = useState(16);
   const [musicTrebleEnabled, setMusicTrebleEnabled] = useState(false);
   const [musicTrebleValue, setMusicTrebleValue] = useState(16);
   const [musicMidEnabled, setMusicMidEnabled] = useState(false);
   const [musicMidValue, setMusicMidValue] = useState(16);
   const [musicBassEnabled, setMusicBassEnabled] = useState(false);
   const [musicBassValue, setMusicBassValue] = useState(16);
-  const [musicEqEnabled, setMusicEqEnabled] = useState(false);
   const [musicEqBands, setMusicEqBands] = useState<EqBand[]>(() =>
     createTenBandEq(),
   );
+  const [musicEqEnabled, setMusicEqEnabled] = useState(false);
   const [music3dEnabled, setMusic3dEnabled] = useState(false);
-  const [music3dValue, setMusic3dValue] = useState(0);
+  const [music3dValue, setMusic3dValue] = useState(16);
   const [musicVocalCutEnabled, setMusicVocalCutEnabled] = useState(false);
-  const [musicVocalCutValue, setMusicVocalCutValue] = useState(0);
+  const [musicVocalCutValue, setMusicVocalCutValue] = useState(16);
   const [musicVbEnabled, setMusicVbEnabled] = useState(false);
-  const [musicVbValue, setMusicVbValue] = useState(0);
+  const [musicVbValue, setMusicVbValue] = useState(16);
   const [musicExciterEnabled, setMusicExciterEnabled] = useState(false);
-  const [musicExciterValue, setMusicExciterValue] = useState(0);
+  const [musicExciterValue, setMusicExciterValue] = useState(16);
 
-  // ======================================================================
-  // Refs
-  // ======================================================================
-
-  // Refs for hue slider CSS custom properties
-  const textColorSliderRef = useRef<HTMLInputElement>(null);
-  const lightColorSliderRef = useRef<HTMLInputElement>(null);
-
-  // Refs for mode group active indices (used in registration callbacks)
-  const textModeActiveRef = useRef<number | null>(null);
-  const lightModeActiveRef = useRef<number | null>(null);
-
-  // Refs for EQ bands (used in registration callbacks for apply)
-  const micEqBandsRef = useRef<EqBand[]>(micEqBands);
-  const musicEqBandsRef = useRef<EqBand[]>(musicEqBands);
-
-  // Central state ref — tracks current toggle+value for every control
-  // so async event handlers always read the latest values.
+  // Ref for state used inside callbacks
   const stateRef = useRef<Record<number, ControlState>>({});
 
-  // Sync refs with state (runs every render, no additional re-renders)
-  /* eslint-disable react-hooks/rules-of-hooks */
-  textModeActiveRef.current = textModeActive;
-  lightModeActiveRef.current = lightModeActive;
-  micEqBandsRef.current = micEqBands;
-  musicEqBandsRef.current = musicEqBands;
-  stateRef.current = {
-    // Text
-    [CMD.TEXT_COLOR_ONE]: { enabled: textColorEnabled, value: textColorValue },
-    [CMD.TEXT_COLOR_AUTO_Speed]: {
-      enabled: textGradientEnabled,
-      value: textGradientSpeed,
-    },
-    [CMD.TEXT_Scroll_Speed]: {
-      enabled: textScrollEnabled,
-      value: textScrollSpeed,
-    },
-    [CMD.TEXT_LIGHT]: {
-      enabled: textBrightnessEnabled,
-      value: textBrightnessValue,
-    },
-    // Light
-    [CMD.LIGHT_AUTO_EN]: { enabled: lightAutoEnabled, value: lightAutoParam },
-    [CMD.LIGHT_COLOR_SET]: {
-      enabled: lightColorEnabled,
-      value: lightColorValue,
-    },
-    [CMD.LIGHT_VAL_SET]: {
-      enabled: lightBrightnessEnabled,
-      value: lightBrightnessValue,
-    },
-    [CMD.LIGHT_SPEED_SET]: {
-      enabled: lightSpeedEnabled,
-      value: lightSpeedValue,
-    },
-    // Mic
-    [CMD.EQ_MIC_VAL]: { enabled: micVolEnabled, value: micVolValue },
-    [CMD.EQ_MIC_priority]: {
-      enabled: micPriorityEnabled,
-      value: micPriorityValue,
-    },
-    [CMD.EQ_MIC_ECHO]: { enabled: micEchoEnabled, value: micEchoValue },
-    [CMD.EQ_MIC_REVERB]: { enabled: micReverbEnabled, value: micReverbValue },
-    [CMD.EQ_MIC_Magic_Sound]: {
-      enabled: micMagicEnabled,
-      value: micMagicValue,
-    },
-    // Music
-    [CMD.EQ_VOL_VAL]: { enabled: musicVolEnabled, value: musicVolValue },
-    [CMD.EQ_VOL_TRE]: { enabled: musicTrebleEnabled, value: musicTrebleValue },
-    [CMD.EQ_VOL_MID]: { enabled: musicMidEnabled, value: musicMidValue },
-    [CMD.EQ_VOL_BASS]: { enabled: musicBassEnabled, value: musicBassValue },
-    [CMD.EQ_VOL_3D]: { enabled: music3dEnabled, value: music3dValue },
-    [CMD.EQ_Voice_Cut]: {
-      enabled: musicVocalCutEnabled,
-      value: musicVocalCutValue,
-    },
-    [CMD.EQ_VOL_VB]: { enabled: musicVbEnabled, value: musicVbValue },
-    [CMD.EQ_Voice_EXCITER]: {
-      enabled: musicExciterEnabled,
-      value: musicExciterValue,
-    },
-  };
-
-  // ======================================================================
-  // Registration effect — register ALL features once on mount
-  // ======================================================================
+  // Keep stateRef in sync
   useEffect(() => {
-    const reg = ble.registerFeature;
-
-    // --- Text panel features ---
-    reg(CMD.TEXT_Content, { apply: () => {} });
-    reg(CMD.TEXT_SAVE, { apply: () => {} });
-
-    for (let i = 0; i < 7; i++) {
-      const cmd = CMD.TEXT_MODE_0 + i;
-      reg(cmd, {
-        apply: (params) => {
-          if (params[0] === 1) {
-            textModeActiveRef.current = i;
-            setTextModeActive(i);
-          } else if (textModeActiveRef.current === i) {
-            textModeActiveRef.current = null;
-            setTextModeActive(null);
-          }
-        },
-      });
-    }
-
-    reg(CMD.TEXT_COLOR_ONE, {
-      apply: (params) => {
-        setTextColorEnabled(params[0] === 1);
-        if (params.length > 1) setTextColorValue(params[1]);
-      },
-    });
-    reg(CMD.TEXT_COLOR_AUTO_Speed, {
-      apply: (params) => {
-        setTextGradientEnabled(params[0] === 1);
-        if (params.length > 1) setTextGradientSpeed(params[1]);
-      },
-    });
-    reg(CMD.TEXT_Scroll_Speed, {
-      apply: (params) => {
-        setTextScrollEnabled(params[0] === 1);
-        if (params.length > 1) setTextScrollSpeed(params[1]);
-      },
-    });
-    reg(CMD.TEXT_LIGHT, {
-      apply: (params) => {
-        setTextBrightnessEnabled(params[0] === 1);
-        if (params.length > 1) setTextBrightnessValue(params[1]);
-      },
-    });
-
-    // --- Light panel features ---
-    for (let i = 0; i < 16; i++) {
-      const cmd = CMD.LIGHT_MODE_0 + i;
-      reg(cmd, {
-        apply: (params) => {
-          if (params[0] === 1) {
-            lightModeActiveRef.current = i;
-            setLightModeActive(i);
-          } else if (lightModeActiveRef.current === i) {
-            lightModeActiveRef.current = null;
-            setLightModeActive(null);
-          }
-        },
-      });
-    }
-
-    reg(CMD.LIGHT_AUTO_EN, {
-      apply: (params) => {
-        setLightAutoEnabled(params[0] === 1);
-        if (params.length > 1) setLightAutoParam(params[1]);
-      },
-    });
-    reg(CMD.LIGHT_COLOR_SET, {
-      apply: (params) => {
-        setLightColorEnabled(params[0] === 1);
-        if (params.length > 1) setLightColorValue(params[1]);
-      },
-    });
-    reg(CMD.LIGHT_VAL_SET, {
-      apply: (params) => {
-        setLightBrightnessEnabled(params[0] === 1);
-        if (params.length > 1) setLightBrightnessValue(params[1]);
-      },
-    });
-    reg(CMD.LIGHT_SPEED_SET, {
-      apply: (params) => {
-        setLightSpeedEnabled(params[0] === 1);
-        if (params.length > 1) setLightSpeedValue(params[1]);
-      },
-    });
-    reg(CMD.LIGHT_SAVE, { apply: () => {} });
-
-    // --- Mic panel features ---
-    reg(CMD.EQ_MIC_VAL, {
-      apply: (params) => {
-        setMicVolEnabled(params[0] === 1);
-        if (params.length > 1) setMicVolValue(params[1]);
-      },
-    });
-    reg(CMD.EQ_MIC_priority, {
-      apply: (params) => {
-        setMicPriorityEnabled(params[0] === 1);
-        if (params.length > 1) setMicPriorityValue(params[1]);
-      },
-    });
-    reg(CMD.EQ_MIC_FRE_VAL, {
-      apply: (params) => {
-        setMicEqEnabled(params[0] === 1);
-        if (params.length >= 11) {
-          setMicEqBands((prev) =>
-            prev.map((band, i) => ({
-              ...band,
-              value: wireToDisplayDb(params[i + 1]),
-            })),
-          );
-        }
-      },
-    });
-    reg(CMD.EQ_MIC_ECHO, {
-      apply: (params) => {
-        setMicEchoEnabled(params[0] === 1);
-        if (params.length > 1) setMicEchoValue(params[1]);
-      },
-    });
-    reg(CMD.EQ_MIC_REVERB, {
-      apply: (params) => {
-        setMicReverbEnabled(params[0] === 1);
-        if (params.length > 1) setMicReverbValue(params[1]);
-      },
-    });
-    reg(CMD.EQ_MIC_Magic_Sound, {
-      apply: (params) => {
-        setMicMagicEnabled(params[0] === 1);
-        if (params.length > 1) setMicMagicValue(params[1]);
-      },
-    });
-    reg(CMD.EQ_MIC_RESET, { apply: () => {} });
-    reg(CMD.EQ_MIC_SAVE, { apply: () => {} });
-
-    // --- Music panel features ---
-    reg(CMD.EQ_VOL_VAL, {
-      apply: (params) => {
-        setMusicVolEnabled(params[0] === 1);
-        if (params.length > 1) setMusicVolValue(params[1]);
-      },
-    });
-    reg(CMD.EQ_VOL_TRE, {
-      apply: (params) => {
-        setMusicTrebleEnabled(params[0] === 1);
-        if (params.length > 1) setMusicTrebleValue(params[1]);
-      },
-    });
-    reg(CMD.EQ_VOL_MID, {
-      apply: (params) => {
-        setMusicMidEnabled(params[0] === 1);
-        if (params.length > 1) setMusicMidValue(params[1]);
-      },
-    });
-    reg(CMD.EQ_VOL_BASS, {
-      apply: (params) => {
-        setMusicBassEnabled(params[0] === 1);
-        if (params.length > 1) setMusicBassValue(params[1]);
-      },
-    });
-    reg(CMD.EQ_VOL_FRE_VAL, {
-      apply: (params) => {
-        setMusicEqEnabled(params[0] === 1);
-        if (params.length >= 11) {
-          setMusicEqBands((prev) =>
-            prev.map((band, i) => ({
-              ...band,
-              value: wireToDisplayDb(params[i + 1]),
-            })),
-          );
-        }
-      },
-    });
-    reg(CMD.EQ_VOL_3D, {
-      apply: (params) => {
-        setMusic3dEnabled(params[0] === 1);
-        if (params.length > 1) setMusic3dValue(params[1]);
-      },
-    });
-    reg(CMD.EQ_Voice_Cut, {
-      apply: (params) => {
-        setMusicVocalCutEnabled(params[0] === 1);
-        if (params.length > 1) setMusicVocalCutValue(params[1]);
-      },
-    });
-    reg(CMD.EQ_VOL_VB, {
-      apply: (params) => {
-        setMusicVbEnabled(params[0] === 1);
-        if (params.length > 1) setMusicVbValue(params[1]);
-      },
-    });
-    reg(CMD.EQ_Voice_EXCITER, {
-      apply: (params) => {
-        setMusicExciterEnabled(params[0] === 1);
-        if (params.length > 1) setMusicExciterValue(params[1]);
-      },
-    });
-    reg(CMD.EQ_VOL_RESET, { apply: () => {} });
-    reg(CMD.EQ_VOL_SAVE, { apply: () => {} });
-
-    // Cleanup
-    const unreg = ble.unregisterFeature;
-    const allCmds: number[] = [
-      CMD.TEXT_Content,
-      CMD.TEXT_SAVE,
-      ...Array.from({ length: 7 }, (_, i) => CMD.TEXT_MODE_0 + i),
-      CMD.TEXT_COLOR_ONE,
-      CMD.TEXT_COLOR_AUTO_Speed,
-      CMD.TEXT_Scroll_Speed,
-      CMD.TEXT_LIGHT,
-      ...Array.from({ length: 16 }, (_, i) => CMD.LIGHT_MODE_0 + i),
-      CMD.LIGHT_AUTO_EN,
-      CMD.LIGHT_COLOR_SET,
-      CMD.LIGHT_VAL_SET,
-      CMD.LIGHT_SPEED_SET,
-      CMD.LIGHT_SAVE,
-      CMD.EQ_MIC_VAL,
-      CMD.EQ_MIC_priority,
-      CMD.EQ_MIC_FRE_VAL,
-      CMD.EQ_MIC_ECHO,
-      CMD.EQ_MIC_REVERB,
-      CMD.EQ_MIC_Magic_Sound,
-      CMD.EQ_MIC_RESET,
-      CMD.EQ_MIC_SAVE,
-      CMD.EQ_VOL_VAL,
-      CMD.EQ_VOL_TRE,
-      CMD.EQ_VOL_MID,
-      CMD.EQ_VOL_BASS,
-      CMD.EQ_VOL_FRE_VAL,
-      CMD.EQ_VOL_3D,
-      CMD.EQ_Voice_Cut,
-      CMD.EQ_VOL_VB,
-      CMD.EQ_Voice_EXCITER,
-      CMD.EQ_VOL_RESET,
-      CMD.EQ_VOL_SAVE,
-    ];
-    return () => {
-      allCmds.forEach((c) => unreg(c));
+    const m: Record<number, ControlState> = {};
+    const set = (cmd: number, enabled: boolean, value: number) => {
+      m[cmd] = { enabled, value };
     };
-  }, [ble.registerFeature, ble.unregisterFeature]);
+    set(CMD.TEXT_COLOR_ONE, textColorEnabled, textColorValue);
+    set(CMD.TEXT_COLOR_AUTO_Speed, textGradientEnabled, textGradientSpeed);
+    set(CMD.TEXT_Scroll_Speed, textScrollEnabled, textScrollSpeed);
+    set(CMD.TEXT_LIGHT, textBrightnessEnabled, textBrightnessValue);
+    set(CMD.LIGHT_COLOR_SET, lightColorEnabled, lightColorValue);
+    set(CMD.LIGHT_VAL_SET, lightBrightnessEnabled, lightBrightnessValue);
+    set(CMD.LIGHT_SPEED_SET, lightSpeedEnabled, lightSpeedValue);
+    set(CMD.LIGHT_AUTO_EN, lightAutoEnabled, lightAutoParam);
+    set(CMD.EQ_MIC_VAL, micVolEnabled, micVolValue);
+    set(CMD.EQ_MIC_priority, micPriorityEnabled, micPriorityValue);
+    set(CMD.EQ_MIC_ECHO, micEchoEnabled, micEchoValue);
+    set(CMD.EQ_MIC_REVERB, micReverbEnabled, micReverbValue);
+    set(CMD.EQ_MIC_Magic_Sound, micMagicEnabled, micMagicValue);
+    set(CMD.EQ_VOL_VAL, musicVolEnabled, musicVolValue);
+    set(CMD.EQ_VOL_TRE, musicTrebleEnabled, musicTrebleValue);
+    set(CMD.EQ_VOL_MID, musicMidEnabled, musicMidValue);
+    set(CMD.EQ_VOL_BASS, musicBassEnabled, musicBassValue);
+    set(CMD.EQ_VOL_3D, music3dEnabled, music3dValue);
+    set(CMD.EQ_Voice_Cut, musicVocalCutEnabled, musicVocalCutValue);
+    set(CMD.EQ_VOL_VB, musicVbEnabled, musicVbValue);
+    set(CMD.EQ_Voice_EXCITER, musicExciterEnabled, musicExciterValue);
+    stateRef.current = m;
+  }, [
+    textColorEnabled, textColorValue,
+    textGradientEnabled, textGradientSpeed,
+    textScrollEnabled, textScrollSpeed,
+    textBrightnessEnabled, textBrightnessValue,
+    lightColorEnabled, lightColorValue,
+    lightBrightnessEnabled, lightBrightnessValue,
+    lightSpeedEnabled, lightSpeedValue,
+    lightAutoEnabled, lightAutoParam,
+    micVolEnabled, micVolValue,
+    micPriorityEnabled, micPriorityValue,
+    micEchoEnabled, micEchoValue,
+    micReverbEnabled, micReverbValue,
+    micMagicEnabled, micMagicValue,
+    musicVolEnabled, musicVolValue,
+    musicTrebleEnabled, musicTrebleValue,
+    musicMidEnabled, musicMidValue,
+    musicBassEnabled, musicBassValue,
+    music3dEnabled, music3dValue,
+    musicVocalCutEnabled, musicVocalCutValue,
+    musicVbEnabled, musicVbValue,
+    musicExciterEnabled, musicExciterValue,
+  ]);
+
+  const textModeActiveRef = useRef<number | null>(null);
+  const lightModeActiveRef = useRef<number | null>(null);
+  const textColorSliderRef = useRef<HTMLInputElement | null>(null);
+  const lightColorSliderRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => { textModeActiveRef.current = textModeActive; }, [textModeActive]);
+  useEffect(() => { lightModeActiveRef.current = lightModeActive; }, [lightModeActive]);
 
   // ======================================================================
-  // Reset effect — reset all controls when connection is lost
+  // Sub-component: effect slider row (label + toggle + slider + value)
   // ======================================================================
-  useEffect(() => {
-    if (!ble.controlsEnabled) {
-      setTextColorEnabled(false);
-      setTextColorValue(0);
-      setTextGradientEnabled(false);
-      setTextGradientSpeed(8);
-      setTextScrollEnabled(false);
-      setTextScrollSpeed(8);
-      setTextBrightnessEnabled(false);
-      setTextBrightnessValue(8);
-      setTextModeActive(null);
-      setLightModeActive(null);
-      setLightAutoEnabled(false);
-      setLightAutoParam(128);
-      setLightColorEnabled(false);
-      setLightColorValue(0);
-      setLightBrightnessEnabled(false);
-      setLightBrightnessValue(8);
-      setLightSpeedEnabled(false);
-      setLightSpeedValue(8);
-      setMicVolEnabled(false);
-      setMicVolValue(16);
-      setMicPriorityEnabled(false);
-      setMicPriorityValue(0);
-      setMicEqEnabled(false);
-      setMicEqBands(createTenBandEq());
-      setMicEchoEnabled(false);
-      setMicEchoValue(0);
-      setMicReverbEnabled(false);
-      setMicReverbValue(0);
-      setMicMagicEnabled(false);
-      setMicMagicValue(0);
-      setMusicVolEnabled(false);
-      setMusicVolValue(20);
-      setMusicTrebleEnabled(false);
-      setMusicTrebleValue(16);
-      setMusicMidEnabled(false);
-      setMusicMidValue(16);
-      setMusicBassEnabled(false);
-      setMusicBassValue(16);
-      setMusicEqEnabled(false);
-      setMusicEqBands(createTenBandEq());
-      setMusic3dEnabled(false);
-      setMusic3dValue(0);
-      setMusicVocalCutEnabled(false);
-      setMusicVocalCutValue(0);
-      setMusicVbEnabled(false);
-      setMusicVbValue(0);
-      setMusicExciterEnabled(false);
-      setMusicExciterValue(0);
-    }
-  }, [ble.controlsEnabled, ble.resetKey]);
 
-  // ======================================================================
-  // Helper: render a standard effect-row with toggle + slider
-  // ======================================================================
   function effectSliderRow(
     label: string,
     cmd: number,
@@ -515,9 +206,9 @@ export default function BluetoothController() {
     };
 
     return (
-      <div className="effect-row" key={cmd}>
-        <span className="effect-label">{label}</span>
-        <div className="effect-toggle">
+      <div className={effectRowClass} key={cmd}>
+        <span className="text-[0.82rem] font-medium text-slate-700 min-w-[70px] whitespace-nowrap">{label}</span>
+        <div className="shrink-0">
           <label className="toggle-switch">
             <input
               type="checkbox"
@@ -528,7 +219,7 @@ export default function BluetoothController() {
             <span className="toggle-slider" />
           </label>
         </div>
-        <div className="effect-slider-wrap">
+        <div className="flex items-center gap-2 flex-1 min-w-[100px]">
           <input
             type="range"
             min={min}
@@ -536,8 +227,9 @@ export default function BluetoothController() {
             value={value}
             disabled={disabled}
             onChange={(e) => handleSlider(Number(e.target.value))}
+            className="flex-1 min-w-[60px] max-w-[160px]"
           />
-          <span className="effect-value">{value}</span>
+          <span className="text-xs text-slate-500 min-w-[28px] text-right">{value}</span>
         </div>
       </div>
     );
@@ -581,9 +273,9 @@ export default function BluetoothController() {
     return (
       <>
         {/* First row: label + toggle + preview */}
-        <div className="effect-row color-row" key={`${cmd}-row1`}>
-          <span className="effect-label">{label}</span>
-          <div className="effect-toggle">
+        <div className={effectRowClass} key={`${cmd}-row1`}>
+          <span className="text-[0.82rem] font-medium text-slate-700 min-w-[70px] whitespace-nowrap">{label}</span>
+          <div className="shrink-0">
             <label className="toggle-switch">
               <input
                 type="checkbox"
@@ -595,14 +287,14 @@ export default function BluetoothController() {
             </label>
           </div>
           <div
-            className="color-preview-box"
+            className="w-[140px] h-16 rounded-xl border-2 border-slate-200 shrink-0 transition-all m-1.5 shadow-md"
             style={{ background: `hsl(${hue},100%,50%)` }}
           />
         </div>
         {/* Second row: hue slider + degree display */}
-        <div className="effect-row" key={`${cmd}-row2`}>
-          <span className="effect-label" />
-          <div className="effect-slider-wrap">
+        <div className={effectRowClass} key={`${cmd}-row2`}>
+          <span className="text-[0.82rem] font-medium min-w-[70px] whitespace-nowrap" />
+          <div className="flex items-center gap-2 flex-1 min-w-[100px]">
             <input
               ref={sliderRef}
               type="range"
@@ -613,7 +305,7 @@ export default function BluetoothController() {
               disabled={disabled}
               onChange={(e) => handleSlider(Number(e.target.value))}
             />
-            <span className="hue-degree">色相: {hue}°</span>
+            <span className="text-xs text-slate-500 min-w-[52px] text-center tabular-nums">色相: {hue}°</span>
           </div>
         </div>
       </>
@@ -633,7 +325,7 @@ export default function BluetoothController() {
     colors?: string[],
   ) {
     return (
-      <div className="mode-grid" key={containerKey}>
+      <div className="grid grid-cols-4 gap-2 py-1.5 pb-2.5" key={containerKey}>
         {labels.map((label, i) => {
           const cmd = startCmd + i;
           const isActive = activeIndex === i;
@@ -657,7 +349,7 @@ export default function BluetoothController() {
           return (
             <button
               key={i}
-              className={`mode-btn${isActive ? ' active' : ''}`}
+              className={`bg-slate-50 border-[1.5px] border-slate-200 rounded-[10px] py-2.5 px-1 text-xs font-medium cursor-pointer transition-all text-slate-600 shadow-none text-center active:scale-95${isActive ? ' !bg-blue-500 !border-blue-500 !text-white' : ''}`}
               type="button"
               disabled={disabled}
               onClick={handleClick}
@@ -687,7 +379,7 @@ export default function BluetoothController() {
     key: string,
     label: string,
     cmd: number,
-    className = 'primary',
+    variant: 'primary' | 'danger' = 'primary',
     params: number[] = [1],
   ) {
     const disabled =
@@ -702,7 +394,7 @@ export default function BluetoothController() {
     return (
       <button
         key={key}
-        className={className}
+        className={variant === 'primary' ? btnPrimary : btnDanger}
         disabled={disabled}
         onClick={handleClick}
       >
@@ -734,7 +426,7 @@ export default function BluetoothController() {
     };
 
     return (
-      <div className="send-row" key="textContent">
+      <div className="flex gap-2 py-2.5 border-b border-slate-50 max-sm:flex-col" key="textContent">
         <input
           type="text"
           id="textContent"
@@ -743,10 +435,11 @@ export default function BluetoothController() {
           disabled={disabled}
           onChange={(e) => setTextContent(e.target.value)}
           onKeyDown={handleKeyDown}
+          className="flex-1 py-2 px-3 border border-slate-200 rounded-[10px] text-sm outline-none focus:border-blue-500 max-sm:w-full max-sm:box-border"
         />
         <button
           id="textSendBtn"
-          className="primary"
+          className={btnPrimary + ' !rounded-[10px] !px-[18px] !py-2 !text-sm shrink-0 max-sm:w-full'}
           disabled={disabled}
           onClick={handleSend}
         >
@@ -795,9 +488,9 @@ export default function BluetoothController() {
     };
 
     const toggleRow = (
-      <div className="effect-row" key={`${key}-eq-toggle`}>
-        <span className="effect-label">{key} EQ</span>
-        <div className="effect-toggle">
+      <div className={effectRowClass} key={`${key}-eq-toggle`}>
+        <span className="text-[0.82rem] font-medium text-slate-700 min-w-[70px] whitespace-nowrap">{key} EQ</span>
+        <div className="shrink-0">
           <label className="toggle-switch">
             <input
               type="checkbox"
@@ -812,8 +505,8 @@ export default function BluetoothController() {
     );
 
     const sliderRow = (
-      <div className="eq-wrapper" key={`${key}-eq-bands`}>
-        <div className="eq-db-scale">
+      <div className="flex gap-1 items-stretch my-1 overflow-x-auto pb-1" key={`${key}-eq-bands`}>
+        <div className="flex flex-col justify-between h-[170px] pr-1 text-[0.6rem] text-slate-400 shrink-0 mb-[22px] min-w-[30px] text-right">
           <span>+12</span>
           <span>+6</span>
           <span>0</span>
@@ -821,10 +514,10 @@ export default function BluetoothController() {
           <span>-12</span>
         </div>
         {bands.map((band, i) => (
-          <div className="eq-band" key={i}>
+          <div className="flex flex-col items-center shrink-0 min-w-[40px]" key={i}>
             <input
               type="range"
-              className="mic-eq-slider"
+              className="eq-slider-vertical w-8 h-[150px] px-0.5 my-1"
               min={band.min}
               max={band.max}
               value={band.value}
@@ -840,7 +533,7 @@ export default function BluetoothController() {
             />
             <input
               type="number"
-              className="eq-band-value"
+              className="w-[38px] text-center p-0.5 rounded border border-slate-200 text-[0.65rem] bg-white"
               min={band.min}
               max={band.max}
               value={band.value}
@@ -849,7 +542,7 @@ export default function BluetoothController() {
               onChange={(e) => handleBandChange(i, Number(e.target.value))}
               onBlur={handleBandCommit}
             />
-            <span className="eq-band-label">{band.label}</span>
+            <span className="font-semibold mt-0.5 text-[0.62rem] text-slate-600">{band.label}</span>
           </div>
         ))}
       </div>
@@ -887,9 +580,9 @@ export default function BluetoothController() {
     };
 
     return (
-      <div className="effect-row" key="mic-magic">
-        <span className="effect-label">魔音效果</span>
-        <div className="effect-toggle">
+      <div className={effectRowClass} key="mic-magic">
+        <span className="text-[0.82rem] font-medium text-slate-700 min-w-[70px] whitespace-nowrap">魔音效果</span>
+        <div className="shrink-0">
           <label className="toggle-switch">
             <input
               type="checkbox"
@@ -901,7 +594,7 @@ export default function BluetoothController() {
           </label>
         </div>
         <select
-          className="effect-select"
+          className="py-[5px] px-2.5 border border-slate-200 rounded-lg text-xs bg-white outline-none focus:border-blue-500"
           value={micMagicValue}
           disabled={disabled}
           onChange={handleSelect}
@@ -919,465 +612,470 @@ export default function BluetoothController() {
   // ======================================================================
   // Render
   // ======================================================================
-  const bleStatusDotClass = `status${ble.bleStatusConnected ? ' connected' : ''}`;
+  const bleStatusDotClass = `status-dot${ble.bleStatusConnected ? ' connected' : ''}`;
 
   return (
-    <div className="container">
-      <h1>
-        BLE 蓝牙调试器
-        <span className="badge">Web Bluetooth API</span>
-      </h1>
-      <div className="sub">
-        支持 Android Chrome / Edge · 扫描 BLE 设备 · 读取设备信息/电池电量
-      </div>
-
-      {/* ---- Button group ---- */}
-      <div className="btn-group">
-        <button className="primary" onClick={ble.scanAndConnect}>
-          扫描 &amp; 连接设备
-        </button>
-        <button
-          disabled={!ble.isConnected}
-          onClick={ble.disconnect}
-        >
-          断开连接
-        </button>
-        <button
-          disabled={!ble.isConnected}
-          onClick={ble.refreshDeviceInfo}
-        >
-          读取设备信息
-        </button>
-      </div>
-
-      {/* ---- Device Dashboard ---- */}
-      <div className="info-card device-dashboard">
-        <div className="dashboard-header">
-          <div>
-            <div className="dashboard-title">设备状态</div>
-            <div className="dashboard-subtitle">BLE 连接与基础信息</div>
-          </div>
-          <div className="dashboard-status" id="bleStatus">
-            <span className={bleStatusDotClass} />
-            {ble.bleStatusText}
-          </div>
-        </div>
-        <div className="dashboard-grid">
-          <div className="metric-tile">
-            <span className="metric-label">蓝牙名称</span>
-            <span className="metric-value" id="deviceName">
-              {ble.deviceName}
-            </span>
-          </div>
-          <div className="metric-tile">
-            <span className="metric-label">电量</span>
-            <span className="metric-value mono" id="batteryLevel">
-              {ble.batteryLevel}
-            </span>
-          </div>
-          <div className="metric-tile">
-            <span className="metric-label">制造商</span>
-            <span className="metric-value" id="manufacturer">
-              {ble.manufacturer}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* ---- Control Card ---- */}
-      <div
-        className={`info-card control-card${!ble.controlsEnabled ? ' controls-disabled' : ''}`}
-        id="controlCard"
-      >
-        {/* Tab Navigation */}
-        <div className="tab-nav">
-          {['text', 'light', 'mic', 'music'].map((tab) => (
-            <button
-              key={tab}
-              className={`tab-btn${activeTab === tab ? ' active' : ''}`}
-              data-tab={tab}
-              onClick={() => setActiveTab(tab)}
-            >
-              {tab === 'text'
-                ? '文字'
-                : tab === 'light'
-                  ? '灯光'
-                  : tab === 'mic'
-                    ? '麦克风'
-                    : '音乐'}
-            </button>
-          ))}
+    <div className="font-sans bg-[var(--bg-body)] text-[var(--text-body)] min-h-screen p-4 max-sm:p-2">
+      <div className="max-w-[700px] mx-auto glass-panel rounded-[28px] max-sm:rounded-2xl max-sm:max-w-full p-5 max-sm:p-3 overflow-hidden">
+        <h1 className="text-[1.65rem] max-sm:text-xl font-semibold m-0 mb-1.5 flex items-center gap-2.5 flex-wrap justify-between">
+          BLE 蓝牙调试器
+          <span className="text-xs bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full font-normal">Web Bluetooth API</span>
+        </h1>
+        <div className="text-slate-500 text-xs mb-5 border-l-[3px] border-blue-500 pl-3">
+          支持 Android Chrome / Edge · 扫描 BLE 设备 · 读取设备信息/电池电量
         </div>
 
-        {/* ====== TEXT PANEL ====== */}
+        {/* ---- Button group ---- */}
+        <div className="flex flex-wrap gap-3 my-5 max-sm:flex-col max-sm:gap-2">
+          <button className={btnPrimary} onClick={ble.scanAndConnect}>
+            扫描 &amp; 连接设备
+          </button>
+          <button
+            className={btnBase}
+            disabled={!ble.isConnected}
+            onClick={ble.disconnect}
+          >
+            断开连接
+          </button>
+          <button
+            className={btnBase}
+            disabled={!ble.isConnected}
+            onClick={ble.refreshDeviceInfo}
+          >
+            读取设备信息
+          </button>
+        </div>
+
+        {/* ---- Device Dashboard ---- */}
+        <div className={infoCardClass}>
+          <div className="flex justify-between items-center gap-3 mb-3.5 max-sm:flex-col max-sm:items-start max-sm:gap-2.5">
+            <div>
+              <div className="text-[0.95rem] font-bold text-slate-900">设备状态</div>
+              <div className="text-xs text-slate-500 mt-0.5">BLE 连接与基础信息</div>
+            </div>
+            <div className="min-w-[112px] inline-flex items-center justify-center gap-1.5 px-2.5 py-[7px] rounded-full bg-slate-100 text-slate-700 text-xs font-bold whitespace-nowrap max-sm:w-full max-sm:justify-start" id="bleStatus">
+              <span className={bleStatusDotClass} />
+              {ble.bleStatusText}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-2.5 max-sm:gap-2">
+            <div className="min-h-[74px] max-sm:min-h-[66px] bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col justify-between gap-2">
+              <span className="text-slate-500 text-xs font-semibold">蓝牙名称</span>
+              <span className="text-slate-900 text-sm font-bold leading-[1.25] break-words" id="deviceName">
+                {ble.deviceName}
+              </span>
+            </div>
+            <div className="min-h-[74px] max-sm:min-h-[66px] bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col justify-between gap-2">
+              <span className="text-slate-500 text-xs font-semibold">电量</span>
+              <span className="text-slate-900 text-sm font-bold font-mono leading-[1.25] break-words" id="batteryLevel">
+                {ble.batteryLevel}
+              </span>
+            </div>
+            <div className="min-h-[74px] max-sm:min-h-[66px] bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col justify-between gap-2">
+              <span className="text-slate-500 text-xs font-semibold">制造商</span>
+              <span className="text-slate-900 text-sm font-bold leading-[1.25] break-words" id="manufacturer">
+                {ble.manufacturer}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ---- Control Card ---- */}
         <div
-          className={`tab-panel${activeTab === 'text' ? ' active' : ''}`}
-          id="panel-text"
+          className={`${infoCardClass}${!ble.controlsEnabled ? ' opacity-[0.58] [&_input:disabled]:opacity-55 [&_input:disabled]:cursor-not-allowed [&_select:disabled]:opacity-55 [&_select:disabled]:cursor-not-allowed [&_button:disabled]:opacity-55 [&_button:disabled]:cursor-not-allowed' : ''}`}
+          id="controlCard"
         >
-          <div className="panel-section">
-            <div className="panel-section-title">文字内容</div>
-            {textContentRow()}
+          {/* Tab Navigation */}
+          <div className="flex border-b-2 border-slate-200 max-sm:overflow-x-auto">
+            {['text', 'light', 'mic', 'music'].map((tab) => (
+              <button
+                key={tab}
+                className={`${tabBtnBase}${activeTab === tab ? ' !text-blue-500 !border-blue-500 !bg-transparent' : ''}`}
+                data-tab={tab}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab === 'text'
+                  ? '文字'
+                  : tab === 'light'
+                    ? '灯光'
+                    : tab === 'mic'
+                      ? '麦克风'
+                      : '音乐'}
+              </button>
+            ))}
           </div>
 
-          <div className="panel-section">
-            <div className="panel-section-title">显示模式</div>
-            {modeButtons(
-              'text',
-              TEXT_MODE_LABELS,
-              CMD.TEXT_MODE_0,
-              textModeActive,
-              setTextModeActive,
-              textModeActiveRef,
-            )}
+          {/* ====== TEXT PANEL ====== */}
+          <div
+            className={`${activeTab === 'text' ? '' : 'hidden'} pt-4 max-sm:pt-3`}
+            id="panel-text"
+          >
+            <div className="mt-3.5 first:mt-0">
+              <div className="text-xs font-semibold text-slate-600 mb-1.5 py-1.5 border-b border-slate-100">文字内容</div>
+              {textContentRow()}
+            </div>
+
+            <div className="mt-3.5">
+              <div className="text-xs font-semibold text-slate-600 mb-1.5 py-1.5 border-b border-slate-100">显示模式</div>
+              {modeButtons(
+                'text',
+                TEXT_MODE_LABELS,
+                CMD.TEXT_MODE_0,
+                textModeActive,
+                setTextModeActive,
+                textModeActiveRef,
+              )}
+            </div>
+
+            <div className="mt-3.5">
+              <div className="text-xs font-semibold text-slate-600 mb-1.5 py-1.5 border-b border-slate-100">样式设置</div>
+              {colorControlRow(
+                '单色颜色',
+                CMD.TEXT_COLOR_ONE,
+                textColorEnabled,
+                textColorValue,
+                setTextColorEnabled,
+                setTextColorValue,
+                textColorSliderRef,
+              )}
+              {effectSliderRow(
+                '渐变速度',
+                CMD.TEXT_COLOR_AUTO_Speed,
+                textGradientEnabled,
+                textGradientSpeed,
+                setTextGradientEnabled,
+                setTextGradientSpeed,
+                0,
+                16,
+              )}
+              {effectSliderRow(
+                '滚动速度',
+                CMD.TEXT_Scroll_Speed,
+                textScrollEnabled,
+                textScrollSpeed,
+                setTextScrollEnabled,
+                setTextScrollSpeed,
+                0,
+                16,
+              )}
+              {effectSliderRow(
+                '亮度',
+                CMD.TEXT_LIGHT,
+                textBrightnessEnabled,
+                textBrightnessValue,
+                setTextBrightnessEnabled,
+                setTextBrightnessValue,
+                0,
+                16,
+              )}
+            </div>
+
+            <div className="mt-3.5">
+              <div className="flex gap-2.5 py-2.5 flex-wrap">
+                {actionButton('textSave', '保存设置', CMD.TEXT_SAVE, 'primary')}
+              </div>
+            </div>
           </div>
 
-          <div className="panel-section">
-            <div className="panel-section-title">样式设置</div>
-            {colorControlRow(
-              '单色颜色',
-              CMD.TEXT_COLOR_ONE,
-              textColorEnabled,
-              textColorValue,
-              setTextColorEnabled,
-              setTextColorValue,
-              textColorSliderRef,
-            )}
-            {effectSliderRow(
-              '渐变速度',
-              CMD.TEXT_COLOR_AUTO_Speed,
-              textGradientEnabled,
-              textGradientSpeed,
-              setTextGradientEnabled,
-              setTextGradientSpeed,
-              0,
-              16,
-            )}
-            {effectSliderRow(
-              '滚动速度',
-              CMD.TEXT_Scroll_Speed,
-              textScrollEnabled,
-              textScrollSpeed,
-              setTextScrollEnabled,
-              setTextScrollSpeed,
-              0,
-              16,
-            )}
-            {effectSliderRow(
-              '亮度',
-              CMD.TEXT_LIGHT,
-              textBrightnessEnabled,
-              textBrightnessValue,
-              setTextBrightnessEnabled,
-              setTextBrightnessValue,
-              0,
-              16,
-            )}
+          {/* ====== LIGHT PANEL ====== */}
+          <div
+            className={`${activeTab === 'light' ? '' : 'hidden'} pt-4 max-sm:pt-3`}
+            id="panel-light"
+          >
+            <div className="mt-3.5 first:mt-0">
+              <div className="text-xs font-semibold text-slate-600 mb-1.5 py-1.5 border-b border-slate-100">灯光模式 (1~16)</div>
+              {modeButtons(
+                'light',
+                Array.from({ length: 16 }, (_, i) => `模式${i + 1}`),
+                CMD.LIGHT_MODE_0,
+                lightModeActive,
+                setLightModeActive,
+                lightModeActiveRef,
+                LIGHT_MODE_COLORS,
+              )}
+            </div>
+
+            <div className="mt-3.5">
+              <div className="text-xs font-semibold text-slate-600 mb-1.5 py-1.5 border-b border-slate-100">自动模式</div>
+              {effectSliderRow(
+                '自动模式',
+                CMD.LIGHT_AUTO_EN,
+                lightAutoEnabled,
+                lightAutoParam,
+                setLightAutoEnabled,
+                setLightAutoParam,
+                5,
+                255,
+              )}
+            </div>
+
+            <div className="mt-3.5">
+              <div className="text-xs font-semibold text-slate-600 mb-1.5 py-1.5 border-b border-slate-100">参数设置</div>
+              {colorControlRow(
+                '颜色',
+                CMD.LIGHT_COLOR_SET,
+                lightColorEnabled,
+                lightColorValue,
+                setLightColorEnabled,
+                setLightColorValue,
+                lightColorSliderRef,
+              )}
+              {effectSliderRow(
+                '亮度',
+                CMD.LIGHT_VAL_SET,
+                lightBrightnessEnabled,
+                lightBrightnessValue,
+                setLightBrightnessEnabled,
+                setLightBrightnessValue,
+                0,
+                16,
+              )}
+              {effectSliderRow(
+                '速度',
+                CMD.LIGHT_SPEED_SET,
+                lightSpeedEnabled,
+                lightSpeedValue,
+                setLightSpeedEnabled,
+                setLightSpeedValue,
+                0,
+                16,
+              )}
+            </div>
+
+            <div className="mt-3.5">
+              <div className="flex gap-2.5 py-2.5 flex-wrap">
+                {actionButton('lightSave', '保存设置', CMD.LIGHT_SAVE, 'primary')}
+              </div>
+            </div>
           </div>
 
-          <div className="panel-section">
-            <div className="action-row">
-              {actionButton('textSave', '保存设置', CMD.TEXT_SAVE, 'primary')}
+          {/* ====== MIC PANEL ====== */}
+          <div
+            className={`${activeTab === 'mic' ? '' : 'hidden'} pt-4 max-sm:pt-3`}
+            id="panel-mic"
+          >
+            <div className="mt-3.5 first:mt-0">
+              <div className="text-xs font-semibold text-slate-600 mb-1.5 py-1.5 border-b border-slate-100">MIC 音量控制</div>
+              {effectSliderRow(
+                'MIC 音量',
+                CMD.EQ_MIC_VAL,
+                micVolEnabled,
+                micVolValue,
+                setMicVolEnabled,
+                setMicVolValue,
+                0,
+                32,
+              )}
+              {effectSliderRow(
+                'MIC 优先',
+                CMD.EQ_MIC_priority,
+                micPriorityEnabled,
+                micPriorityValue,
+                setMicPriorityEnabled,
+                setMicPriorityValue,
+                0,
+                32,
+              )}
+            </div>
+
+            <div className="mt-3.5">
+              <div className="text-xs font-semibold text-slate-600 mb-1.5 py-1.5 border-b border-slate-100">均衡器 (EQ) 10 频点</div>
+              {eqStrip(
+                'MIC',
+                micEqBands,
+                setMicEqBands,
+                CMD.EQ_MIC_FRE_VAL,
+                micEqEnabled,
+                setMicEqEnabled,
+              )}
+            </div>
+
+            <div className="mt-3.5">
+              <div className="text-xs font-semibold text-slate-600 mb-1.5 py-1.5 border-b border-slate-100">MIC 效果</div>
+              {effectSliderRow(
+                '回声',
+                CMD.EQ_MIC_ECHO,
+                micEchoEnabled,
+                micEchoValue,
+                setMicEchoEnabled,
+                setMicEchoValue,
+                0,
+                32,
+              )}
+              {effectSliderRow(
+                '混响',
+                CMD.EQ_MIC_REVERB,
+                micReverbEnabled,
+                micReverbValue,
+                setMicReverbEnabled,
+                setMicReverbValue,
+                0,
+                32,
+              )}
+              {micMagicControl()}
+            </div>
+
+            <div className="mt-3.5">
+              <div className="flex gap-2.5 py-2.5 flex-wrap">
+                {actionButton('micReset', '一键恢复默认', CMD.EQ_MIC_RESET, 'danger')}
+                {actionButton('micSave', '保存设置', CMD.EQ_MIC_SAVE, 'primary')}
+              </div>
+            </div>
+          </div>
+
+          {/* ====== MUSIC PANEL ====== */}
+          <div
+            className={`${activeTab === 'music' ? '' : 'hidden'} pt-4 max-sm:pt-3`}
+            id="panel-music"
+          >
+            <div className="mt-3.5 first:mt-0">
+              <div className="text-xs font-semibold text-slate-600 mb-1.5 py-1.5 border-b border-slate-100">主音量控制</div>
+              {effectSliderRow(
+                '主音量',
+                CMD.EQ_VOL_VAL,
+                musicVolEnabled,
+                musicVolValue,
+                setMusicVolEnabled,
+                setMusicVolValue,
+                0,
+                32,
+              )}
+              {effectSliderRow(
+                '高音',
+                CMD.EQ_VOL_TRE,
+                musicTrebleEnabled,
+                musicTrebleValue,
+                setMusicTrebleEnabled,
+                setMusicTrebleValue,
+                0,
+                32,
+              )}
+              {effectSliderRow(
+                '中音',
+                CMD.EQ_VOL_MID,
+                musicMidEnabled,
+                musicMidValue,
+                setMusicMidEnabled,
+                setMusicMidValue,
+                0,
+                32,
+              )}
+              {effectSliderRow(
+                '低音',
+                CMD.EQ_VOL_BASS,
+                musicBassEnabled,
+                musicBassValue,
+                setMusicBassEnabled,
+                setMusicBassValue,
+                0,
+                32,
+              )}
+            </div>
+
+            <div className="mt-3.5">
+              <div className="text-xs font-semibold text-slate-600 mb-1.5 py-1.5 border-b border-slate-100">均衡器 (EQ) 10 频点</div>
+              {eqStrip(
+                '音乐',
+                musicEqBands,
+                setMusicEqBands,
+                CMD.EQ_VOL_FRE_VAL,
+                musicEqEnabled,
+                setMusicEqEnabled,
+              )}
+            </div>
+
+            <div className="mt-3.5">
+              <div className="text-xs font-semibold text-slate-600 mb-1.5 py-1.5 border-b border-slate-100">音效增强</div>
+              {effectSliderRow(
+                '3D 丽音',
+                CMD.EQ_VOL_3D,
+                music3dEnabled,
+                music3dValue,
+                setMusic3dEnabled,
+                setMusic3dValue,
+                0,
+                32,
+              )}
+              {effectSliderRow(
+                '人声消除',
+                CMD.EQ_Voice_Cut,
+                musicVocalCutEnabled,
+                musicVocalCutValue,
+                setMusicVocalCutEnabled,
+                setMusicVocalCutValue,
+                0,
+                32,
+              )}
+              {effectSliderRow(
+                '虚拟低音',
+                CMD.EQ_VOL_VB,
+                musicVbEnabled,
+                musicVbValue,
+                setMusicVbEnabled,
+                setMusicVbValue,
+                0,
+                32,
+              )}
+              {effectSliderRow(
+                '人声激励',
+                CMD.EQ_Voice_EXCITER,
+                musicExciterEnabled,
+                musicExciterValue,
+                setMusicExciterEnabled,
+                setMusicExciterValue,
+                0,
+                32,
+              )}
+            </div>
+
+            <div className="mt-3.5">
+              <div className="flex gap-2.5 py-2.5 flex-wrap">
+                {actionButton('musicReset', '一键恢复默认', CMD.EQ_VOL_RESET, 'danger')}
+                {actionButton('musicSave', '保存设置', CMD.EQ_VOL_SAVE, 'primary')}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* ====== LIGHT PANEL ====== */}
-        <div
-          className={`tab-panel${activeTab === 'light' ? ' active' : ''}`}
-          id="panel-light"
-        >
-          <div className="panel-section">
-            <div className="panel-section-title">灯光模式 (1~16)</div>
-            {modeButtons(
-              'light',
-              Array.from({ length: 16 }, (_, i) => `模式${i + 1}`),
-              CMD.LIGHT_MODE_0,
-              lightModeActive,
-              setLightModeActive,
-              lightModeActiveRef,
-              LIGHT_MODE_COLORS,
-            )}
-          </div>
-
-          <div className="panel-section">
-            <div className="panel-section-title">自动模式</div>
-            {effectSliderRow(
-              '自动模式',
-              CMD.LIGHT_AUTO_EN,
-              lightAutoEnabled,
-              lightAutoParam,
-              setLightAutoEnabled,
-              setLightAutoParam,
-              5,
-              255,
-            )}
-          </div>
-
-          <div className="panel-section">
-            <div className="panel-section-title">参数设置</div>
-            {colorControlRow(
-              '颜色',
-              CMD.LIGHT_COLOR_SET,
-              lightColorEnabled,
-              lightColorValue,
-              setLightColorEnabled,
-              setLightColorValue,
-              lightColorSliderRef,
-            )}
-            {effectSliderRow(
-              '亮度',
-              CMD.LIGHT_VAL_SET,
-              lightBrightnessEnabled,
-              lightBrightnessValue,
-              setLightBrightnessEnabled,
-              setLightBrightnessValue,
-              0,
-              16,
-            )}
-            {effectSliderRow(
-              '速度',
-              CMD.LIGHT_SPEED_SET,
-              lightSpeedEnabled,
-              lightSpeedValue,
-              setLightSpeedEnabled,
-              setLightSpeedValue,
-              0,
-              16,
-            )}
-          </div>
-
-          <div className="panel-section">
-            <div className="action-row">
-              {actionButton('lightSave', '保存设置', CMD.LIGHT_SAVE, 'primary')}
+        {/* ---- Log Panel (hidden by default, use F12 console to view) ---- */}
+        <div className="hidden">
+          <span>实时日志</span>
+          <button
+            type="button"
+            className="hidden"
+            onClick={ble.clearLog}
+          >
+            清空
+          </button>
+        </div>
+        <div className="hidden" id="logPanel">
+          {ble.logEntries.length === 0 ? (
+            <div style={{ marginBottom: '4px', wordBreak: 'break-word' }}>
+              [系统] 等待操作，点击「扫描 &amp; 连接设备」
             </div>
-          </div>
+          ) : (
+            ble.logEntries.map((entry, idx) => (
+              <div
+                key={idx}
+                style={{
+                  marginBottom: '4px',
+                  wordBreak: 'break-word',
+                  color: entry.isError ? '#ffb4a2' : undefined,
+                }}
+              >
+                [{new Date(entry.time).toLocaleTimeString('zh-CN', {
+                  hour12: false,
+                })}] {entry.isError ? '[错误]' : '[信息]'} {entry.msg}
+              </div>
+            ))
+          )}
         </div>
 
-        {/* ====== MIC PANEL ====== */}
-        <div
-          className={`tab-panel${activeTab === 'mic' ? ' active' : ''}`}
-          id="panel-mic"
-        >
-          <div className="panel-section">
-            <div className="panel-section-title">MIC 音量控制</div>
-            {effectSliderRow(
-              'MIC 音量',
-              CMD.EQ_MIC_VAL,
-              micVolEnabled,
-              micVolValue,
-              setMicVolEnabled,
-              setMicVolValue,
-              0,
-              32,
-            )}
-            {effectSliderRow(
-              'MIC 优先',
-              CMD.EQ_MIC_priority,
-              micPriorityEnabled,
-              micPriorityValue,
-              setMicPriorityEnabled,
-              setMicPriorityValue,
-              0,
-              32,
-            )}
-          </div>
-
-          <div className="panel-section">
-            <div className="panel-section-title">均衡器 (EQ) 10 频点</div>
-            {eqStrip(
-              'MIC',
-              micEqBands,
-              setMicEqBands,
-              CMD.EQ_MIC_FRE_VAL,
-              micEqEnabled,
-              setMicEqEnabled,
-            )}
-          </div>
-
-          <div className="panel-section">
-            <div className="panel-section-title">MIC 效果</div>
-            {effectSliderRow(
-              '回声',
-              CMD.EQ_MIC_ECHO,
-              micEchoEnabled,
-              micEchoValue,
-              setMicEchoEnabled,
-              setMicEchoValue,
-              0,
-              32,
-            )}
-            {effectSliderRow(
-              '混响',
-              CMD.EQ_MIC_REVERB,
-              micReverbEnabled,
-              micReverbValue,
-              setMicReverbEnabled,
-              setMicReverbValue,
-              0,
-              32,
-            )}
-            {micMagicControl()}
-          </div>
-
-          <div className="panel-section">
-            <div className="action-row">
-              {actionButton('micReset', '一键恢复默认', CMD.EQ_MIC_RESET, 'danger')}
-              {actionButton('micSave', '保存设置', CMD.EQ_MIC_SAVE, 'primary')}
-            </div>
-          </div>
-        </div>
-
-        {/* ====== MUSIC PANEL ====== */}
-        <div
-          className={`tab-panel${activeTab === 'music' ? ' active' : ''}`}
-          id="panel-music"
-        >
-          <div className="panel-section">
-            <div className="panel-section-title">主音量控制</div>
-            {effectSliderRow(
-              '主音量',
-              CMD.EQ_VOL_VAL,
-              musicVolEnabled,
-              musicVolValue,
-              setMusicVolEnabled,
-              setMusicVolValue,
-              0,
-              32,
-            )}
-            {effectSliderRow(
-              '高音',
-              CMD.EQ_VOL_TRE,
-              musicTrebleEnabled,
-              musicTrebleValue,
-              setMusicTrebleEnabled,
-              setMusicTrebleValue,
-              0,
-              32,
-            )}
-            {effectSliderRow(
-              '中音',
-              CMD.EQ_VOL_MID,
-              musicMidEnabled,
-              musicMidValue,
-              setMusicMidEnabled,
-              setMusicMidValue,
-              0,
-              32,
-            )}
-            {effectSliderRow(
-              '低音',
-              CMD.EQ_VOL_BASS,
-              musicBassEnabled,
-              musicBassValue,
-              setMusicBassEnabled,
-              setMusicBassValue,
-              0,
-              32,
-            )}
-          </div>
-
-          <div className="panel-section">
-            <div className="panel-section-title">均衡器 (EQ) 10 频点</div>
-            {eqStrip(
-              '音乐',
-              musicEqBands,
-              setMusicEqBands,
-              CMD.EQ_VOL_FRE_VAL,
-              musicEqEnabled,
-              setMusicEqEnabled,
-            )}
-          </div>
-
-          <div className="panel-section">
-            <div className="panel-section-title">音效增强</div>
-            {effectSliderRow(
-              '3D 丽音',
-              CMD.EQ_VOL_3D,
-              music3dEnabled,
-              music3dValue,
-              setMusic3dEnabled,
-              setMusic3dValue,
-              0,
-              32,
-            )}
-            {effectSliderRow(
-              '人声消除',
-              CMD.EQ_Voice_Cut,
-              musicVocalCutEnabled,
-              musicVocalCutValue,
-              setMusicVocalCutEnabled,
-              setMusicVocalCutValue,
-              0,
-              32,
-            )}
-            {effectSliderRow(
-              '虚拟低音',
-              CMD.EQ_VOL_VB,
-              musicVbEnabled,
-              musicVbValue,
-              setMusicVbEnabled,
-              setMusicVbValue,
-              0,
-              32,
-            )}
-            {effectSliderRow(
-              '人声激励',
-              CMD.EQ_Voice_EXCITER,
-              musicExciterEnabled,
-              musicExciterValue,
-              setMusicExciterEnabled,
-              setMusicExciterValue,
-              0,
-              32,
-            )}
-          </div>
-
-          <div className="panel-section">
-            <div className="action-row">
-              {actionButton('musicReset', '一键恢复默认', CMD.EQ_VOL_RESET, 'danger')}
-              {actionButton('musicSave', '保存设置', CMD.EQ_VOL_SAVE, 'primary')}
-            </div>
-          </div>
-        </div>
+        <hr className="border-none border-t border-[var(--divider)] my-4 max-sm:my-3" />
+        <footer className="text-xs text-center text-[var(--footer-text)] mt-6 max-sm:mt-4 max-sm:text-[0.65rem]">
+          基于 Web Bluetooth API | 需要用户手势触发 | 测试 BLE (低功耗蓝牙) 设备
+        </footer>
       </div>
-
-      {/* ---- Log Panel (hidden by default, use F12 console to view) ---- */}
-      <div className="log-title">
-        <span>实时日志</span>
-        <button
-          type="button"
-          className="clear-log"
-          onClick={ble.clearLog}
-        >
-          清空
-        </button>
-      </div>
-      <div className="log-area" id="logPanel">
-        {ble.logEntries.length === 0 ? (
-          <div style={{ marginBottom: '4px', wordBreak: 'break-word' }}>
-            [系统] 等待操作，点击「扫描 &amp; 连接设备」
-          </div>
-        ) : (
-          ble.logEntries.map((entry, idx) => (
-            <div
-              key={idx}
-              style={{
-                marginBottom: '4px',
-                wordBreak: 'break-word',
-                color: entry.isError ? '#ffb4a2' : undefined,
-              }}
-            >
-              [{new Date(entry.time).toLocaleTimeString('zh-CN', {
-                hour12: false,
-              })}] {entry.isError ? '[错误]' : '[信息]'} {entry.msg}
-            </div>
-          ))
-        )}
-      </div>
-
-      <footer>
-        基于 Web Bluetooth API | 需要用户手势触发 | 测试 BLE (低功耗蓝牙) 设备
-      </footer>
     </div>
   );
 }

@@ -1,10 +1,367 @@
-/* Global reset — individual page styles are in styles/*.css */
+/* ===== Tailwind CSS ===== */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===================================================================
+   设计 Token（以 BLE 页面为基准）
+   =================================================================== */
+
+@layer base {
+  :root {
+    /* Body */
+    --bg-body: #f5f7fb;
+    --text-body: #1e293b;
+    --text-muted: #64748b;
+
+    /* Glass panel / 卡片 */
+    --glass-bg: rgba(255, 255, 255, 0.92);
+    --glass-border: #e2e8f0;
+    --glass-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+
+    /* 输入框 */
+    --input-bg: #ffffff;
+    --input-border: #e2e8f0;
+    --input-text: #1e293b;
+    --input-placeholder: #94a3b8;
+    --input-focus: #3b82f6;
+
+    /* 主按钮 */
+    --btn-primary-bg: #3b82f6;
+    --btn-primary-hover: #2563eb;
+    --btn-primary-text: #ffffff;
+    --btn-primary-border: #3b82f6;
+
+    /* 次按钮 */
+    --btn-secondary-bg: #ffffff;
+    --btn-secondary-hover: #f1f5f9;
+    --btn-secondary-text: #1e293b;
+    --btn-secondary-border: #cbd5e1;
+
+    /* 面板（info boxes） */
+    --panel-bg: #f8fafc;
+    --panel-border: #e2e8f0;
+
+    /* 终端 / 接收区 */
+    --terminal-bg: #f8f9fa;
+    --terminal-border: #ddd;
+    --terminal-text: #333;
+
+    /* 页头部 & 页脚 */
+    --header-bg: rgba(255, 255, 255, 0.95);
+    --header-border: #e2e8f0;
+    --footer-bg: #f5f7fa;
+    --footer-border: #eee;
+    --footer-text: #7e8aa2;
+
+    /* 状态徽章 */
+    --status-connected-bg: #dcfce7;
+    --status-connected-text: #166534;
+    --status-connected-border: #bbf7d0;
+    --status-disconnected-bg: #fef2f2;
+    --status-disconnected-text: #991b1b;
+    --status-disconnected-border: #fecaca;
+
+    /* 滚动条 */
+    --scrollbar-track: #f1f5f9;
+    --scrollbar-thumb: #cbd5e1;
+    --scrollbar-thumb-hover: #94a3b8;
+
+    /* 滑块 */
+    --slider-track: #e2e8f0;
+    --slider-track-empty: #e2e8f0;
+    --slider-thumb-bg: #3b82f6;
+    --eq-slider-track: #e2e8f0;
+
+    /* 分隔线 */
+    --divider: #e2e8f0;
+
+    /* 导航 */
+    --nav-text: #6b7280;
+    --nav-hover: #111827;
+
+    /* 强调色 */
+    --text-amber: #d97706;
+
+    /* 危险按钮 */
+    --btn-danger-bg: #fff5f5;
+    --btn-danger-text: #b91c1c;
+    --btn-danger-border: #fecaca;
+    --btn-danger-hover: #fee2e2;
+  }
+
+  .dark {
+    /* Body */
+    --bg-body: #0f172a;
+    --text-body: #f1f5f9;
+    --text-muted: #94a3b8;
+
+    /* Glass panel */
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+
+    /* Glass input */
+    --input-bg: rgba(0, 0, 0, 0.2);
+    --input-border: rgba(255, 255, 255, 0.1);
+    --input-text: #ffffff;
+    --input-placeholder: rgba(255, 255, 255, 0.3);
+    --input-focus: #60a5fa;
+
+    /* Primary button */
+    --btn-primary-bg: rgba(37, 99, 235, 0.8);
+    --btn-primary-hover: #2563eb;
+    --btn-primary-text: #ffffff;
+    --btn-primary-border: rgba(59, 130, 246, 0.5);
+
+    /* Secondary button */
+    --btn-secondary-bg: rgba(255, 255, 255, 0.1);
+    --btn-secondary-hover: rgba(255, 255, 255, 0.2);
+    --btn-secondary-text: #ffffff;
+    --btn-secondary-border: rgba(255, 255, 255, 0.1);
+
+    /* Panel */
+    --panel-bg: rgba(0, 0, 0, 0.2);
+    --panel-border: rgba(255, 255, 255, 0.05);
+
+    /* Terminal */
+    --terminal-bg: rgba(0, 0, 0, 0.3);
+    --terminal-border: rgba(255, 255, 255, 0.05);
+    --terminal-text: #4ade80;
+
+    /* Header & Footer */
+    --header-bg: rgba(15, 23, 42, 0.5);
+    --header-border: rgba(255, 255, 255, 0.05);
+    --footer-bg: rgba(0, 0, 0, 0.1);
+    --footer-border: rgba(255, 255, 255, 0.05);
+    --footer-text: #94a3b8;
+
+    /* Status badges */
+    --status-connected-bg: rgba(34, 197, 94, 0.2);
+    --status-connected-text: #86efac;
+    --status-connected-border: rgba(34, 197, 94, 0.3);
+    --status-disconnected-bg: rgba(239, 68, 68, 0.2);
+    --status-disconnected-text: #fca5a5;
+    --status-disconnected-border: rgba(239, 68, 68, 0.3);
+
+    /* Scrollbar */
+    --scrollbar-track: rgba(0, 0, 0, 0.1);
+    --scrollbar-thumb: rgba(255, 255, 255, 0.2);
+    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3);
+
+    /* Slider */
+    --slider-track: rgba(0, 0, 0, 0.3);
+    --slider-track-empty: rgba(255, 255, 255, 0.1);
+    --slider-thumb-bg: #60a5fa;
+    --eq-slider-track: rgba(255, 255, 255, 0.1);
+
+    /* Divider */
+    --divider: rgba(255, 255, 255, 0.05);
+
+    /* Nav */
+    --nav-text: #94a3b8;
+    --nav-hover: #ffffff;
+
+    /* Amber accent */
+    --text-amber: #fbbf24;
+
+    /* Danger button */
+    --btn-danger-bg: rgba(239, 68, 68, 0.15);
+    --btn-danger-text: #fca5a5;
+    --btn-danger-border: rgba(239, 68, 68, 0.3);
+    --btn-danger-hover: rgba(239, 68, 68, 0.25);
+  }
+
+  /* ---- 全局基础 ---- */
+  body {
+    background-color: var(--bg-body);
+    color: var(--text-body);
+  }
+}
+
+/* ===================================================================
+   通用组件 Class（对标 BLE 页面控件）
+   =================================================================== */
+
+/* ---- 卡片 / 面板 ---- */
+.glass-panel {
+  background-color: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  @apply backdrop-blur-md;
+}
+
+.glass-panel-subtle {
+  background-color: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+}
+
+/* ---- 输入框 ---- */
+.glass-input {
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--input-text);
+  @apply outline-none transition-all;
+}
+.glass-input::placeholder {
+  color: var(--input-placeholder);
+}
+.glass-input:focus {
+  border-color: var(--input-focus);
+  --tw-ring-color: var(--input-focus);
+  @apply ring-1;
+}
+
+/* ---- 主按钮 ---- */
+.glass-btn-primary {
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border: 1px solid var(--btn-primary-border);
+  @apply cursor-pointer font-medium transition-all active:scale-95;
+}
+.glass-btn-primary:hover {
+  background-color: var(--btn-primary-hover);
+}
+
+/* ---- 次按钮 ---- */
+.glass-btn-secondary {
+  background-color: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  border: 1px solid var(--btn-secondary-border);
+  @apply cursor-pointer font-medium transition-all active:scale-95;
+}
+.glass-btn-secondary:hover {
+  background-color: var(--btn-secondary-hover);
+}
+
+/* ---- 危险按钮 ---- */
+.glass-btn-danger {
+  background-color: var(--btn-danger-bg);
+  color: var(--btn-danger-text);
+  border: 1px solid var(--btn-danger-border);
+  @apply cursor-pointer font-medium transition-all active:scale-95;
+}
+.glass-btn-danger:hover {
+  background-color: var(--btn-danger-hover);
+}
+
+/* ---- 按钮基础重置（消除浏览器差异） ---- */
+.glass-btn-primary,
+.glass-btn-secondary,
+.glass-btn-danger {
+  @apply shadow-sm;
+}
+.glass-btn-primary:disabled,
+.glass-btn-secondary:disabled,
+.glass-btn-danger:disabled {
+  @apply opacity-50 cursor-not-allowed;
+  transform: none;
+}
+
+/* ---- 水平滑块（PA / 音量） ---- */
+.slider-thumb {
+  @apply appearance-none h-2 rounded-lg outline-none;
+  background-color: var(--slider-track);
+}
+.slider-thumb::-webkit-slider-runnable-track {
+  @apply h-2 rounded-lg;
+  background: linear-gradient(
+    to right,
+    var(--slider-thumb-bg) 0%,
+    var(--slider-thumb-bg) var(--slider-percent, 50%),
+    var(--slider-track-empty) var(--slider-percent, 50%),
+    var(--slider-track-empty) 100%
+  );
+}
+.slider-thumb::-webkit-slider-thumb {
+  @apply appearance-none w-4 h-4 rounded-full cursor-pointer shadow-lg transition-transform;
+  background: var(--slider-thumb-bg);
+  margin-top: -4px;
+}
+.slider-thumb::-webkit-slider-thumb:hover {
+  @apply scale-110;
+}
+.slider-thumb::-moz-range-progress {
+  background-color: var(--slider-thumb-bg);
+}
+.slider-thumb::-moz-range-track {
+  background-color: var(--slider-track-empty);
+}
+.slider-thumb::-moz-range-thumb {
+  @apply w-4 h-4 rounded-full cursor-pointer shadow-lg;
+  background: var(--slider-thumb-bg);
+  border: none;
+}
+
+/* ---- 垂直 EQ 滑块 ---- */
+.eq-slider-vertical {
+  -webkit-appearance: slider-vertical;
+  appearance: slider-vertical;
+  @apply cursor-pointer;
+  background: transparent;
+}
+.eq-slider-vertical::-webkit-slider-runnable-track {
+  background: var(--eq-slider-track);
+}
+.eq-slider-vertical::-webkit-slider-thumb {
+  @apply appearance-none;
+  background: var(--slider-thumb-bg);
+  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.3);
+}
+
+/* ---- 状态指示点 ---- */
+.status-dot {
+  @apply inline-block w-2.5 h-2.5 rounded-full;
+  background-color: #94a3b8;
+}
+.status-dot.connected {
+  background-color: #22c55e;
+  box-shadow: 0 0 4px #22c55e;
+}
+
+/* ---- 分隔线 ---- */
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--divider);
+}
+
+/* ---- 滚动条 ---- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* ===================================================================
+   全局 Reset（所有页面共用，维持现有）
+   =================================================================== */
+
+html,
 body {
   margin: 0;
   padding: 0;
 }
 
-/* Prevent page-level CSS from breaking the root container */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  -webkit-tap-highlight-color: transparent;
+}
+
 #root {
   min-height: 100vh;
 }
