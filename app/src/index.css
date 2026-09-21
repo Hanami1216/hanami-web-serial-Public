@@ -116,96 +116,97 @@
 
   /* Body */
   --bg-body: #0f172a;
-    --text-body: #f1f5f9;
-    --text-muted: #94a3b8;
+  --text-body: #f1f5f9;
+  --text-muted: #94a3b8;
 
-    /* Glass panel */
-    --glass-bg: rgba(255, 255, 255, 0.1);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  /* Glass panel */
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 
-    /* Glass input */
-    --input-bg: rgba(0, 0, 0, 0.2);
-    --input-border: rgba(255, 255, 255, 0.1);
-    --input-text: #ffffff;
-    --input-placeholder: rgba(255, 255, 255, 0.3);
-    --input-focus: #60a5fa;
+  /* Glass input */
+  --input-bg: rgba(0, 0, 0, 0.2);
+  --input-border: rgba(255, 255, 255, 0.1);
+  --input-text: #ffffff;
+  --input-placeholder: rgba(255, 255, 255, 0.3);
+  --input-focus: #60a5fa;
 
-    /* Primary button */
-    --btn-primary-bg: rgba(37, 99, 235, 0.8);
-    --btn-primary-hover: #2563eb;
-    --btn-primary-text: #ffffff;
-    --btn-primary-border: rgba(59, 130, 246, 0.5);
+  /* Primary button */
+  --btn-primary-bg: rgba(37, 99, 235, 0.8);
+  --btn-primary-hover: #2563eb;
+  --btn-primary-text: #ffffff;
+  --btn-primary-border: rgba(59, 130, 246, 0.5);
 
-    /* Secondary button */
-    --btn-secondary-bg: rgba(255, 255, 255, 0.1);
-    --btn-secondary-hover: rgba(255, 255, 255, 0.2);
-    --btn-secondary-text: #ffffff;
-    --btn-secondary-border: rgba(255, 255, 255, 0.1);
+  /* Secondary button */
+  --btn-secondary-bg: rgba(255, 255, 255, 0.1);
+  --btn-secondary-hover: rgba(255, 255, 255, 0.2);
+  --btn-secondary-text: #ffffff;
+  --btn-secondary-border: rgba(255, 255, 255, 0.1);
 
-    /* Panel */
-    --panel-bg: rgba(0, 0, 0, 0.2);
-    --panel-border: rgba(255, 255, 255, 0.05);
+  /* Panel */
+  --panel-bg: rgba(0, 0, 0, 0.2);
+  --panel-border: rgba(255, 255, 255, 0.05);
 
-    /* Terminal */
-    --terminal-bg: rgba(0, 0, 0, 0.3);
-    --terminal-border: rgba(255, 255, 255, 0.05);
-    --terminal-text: #4ade80;
+  /* Terminal */
+  --terminal-bg: rgba(0, 0, 0, 0.3);
+  --terminal-border: rgba(255, 255, 255, 0.05);
+  --terminal-text: #4ade80;
 
-    /* Header & Footer */
-    --header-bg: rgba(15, 23, 42, 0.5);
-    --header-border: rgba(255, 255, 255, 0.05);
-    --footer-bg: rgba(0, 0, 0, 0.1);
-    --footer-border: rgba(255, 255, 255, 0.05);
-    --footer-text: #94a3b8;
+  /* Header & Footer */
+  --header-bg: rgba(15, 23, 42, 0.5);
+  --header-border: rgba(255, 255, 255, 0.05);
+  --footer-bg: rgba(0, 0, 0, 0.1);
+  --footer-border: rgba(255, 255, 255, 0.05);
+  --footer-text: #94a3b8;
 
-    /* Status badges */
-    --status-connected-bg: rgba(34, 197, 94, 0.2);
-    --status-connected-text: #86efac;
-    --status-connected-border: rgba(34, 197, 94, 0.3);
-    --status-disconnected-bg: rgba(239, 68, 68, 0.2);
-    --status-disconnected-text: #fca5a5;
-    --status-disconnected-border: rgba(239, 68, 68, 0.3);
+  /* Status badges */
+  --status-connected-bg: rgba(34, 197, 94, 0.2);
+  --status-connected-text: #86efac;
+  --status-connected-border: rgba(34, 197, 94, 0.3);
+  --status-disconnected-bg: rgba(239, 68, 68, 0.2);
+  --status-disconnected-text: #fca5a5;
+  --status-disconnected-border: rgba(239, 68, 68, 0.3);
 
-    /* Scrollbar */
-    --scrollbar-track: rgba(0, 0, 0, 0.1);
-    --scrollbar-thumb: rgba(255, 255, 255, 0.2);
-    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3);
+  /* Scrollbar */
+  --scrollbar-track: rgba(0, 0, 0, 0.1);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.2);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3);
 
-    /* Slider */
-    --slider-track: rgba(0, 0, 0, 0.3);
-    --slider-track-empty: rgba(255, 255, 255, 0.1);
-    --slider-thumb-bg: #60a5fa;
-    --eq-slider-track: rgba(255, 255, 255, 0.1);
+  /* Slider */
+  --slider-track: rgba(0, 0, 0, 0.3);
+  --slider-track-empty: rgba(255, 255, 255, 0.1);
+  --slider-thumb-bg: #60a5fa;
+  --eq-slider-track: rgba(255, 255, 255, 0.1);
 
-    /* Divider */
-    --divider: rgba(255, 255, 255, 0.05);
+  /* Divider */
+  --divider: rgba(255, 255, 255, 0.05);
 
-    /* Nav */
-    --nav-text: #94a3b8;
-    --nav-hover: #ffffff;
+  /* Nav */
+  --nav-text: #94a3b8;
+  --nav-hover: #ffffff;
 
-    /* Amber accent */
-    --text-amber: #fbbf24;
+  /* Amber accent */
+  --text-amber: #fbbf24;
 
-    /* 状态行（语义色：空闲 / 进行中） */
-    --status-idle-bg: rgba(255, 255, 255, 0.08);
-    --status-pending-bg: rgba(245, 158, 11, 0.2);
+  /* 状态行（语义色：空闲 / 进行中） */
+  --status-idle-bg: rgba(255, 255, 255, 0.08);
+  --status-pending-bg: rgba(245, 158, 11, 0.2);
 
-    /* 状态圆点 / EQ 刻度 */
-    --status-dot-idle: #64748b;
-    --status-dot-connected: #4ade80;
-    --eq-scale-text: #94a3b8;
+  /* 状态圆点 / EQ 刻度 */
+  --status-dot-idle: #64748b;
+  --status-dot-connected: #4ade80;
+  --eq-scale-text: #94a3b8;
 
-    /* Danger button */
-    --btn-danger-bg: rgba(239, 68, 68, 0.15);
-    --btn-danger-text: #fca5a5;
-    --btn-danger-border: rgba(239, 68, 68, 0.3);
-    --btn-danger-hover: rgba(239, 68, 68, 0.25);
+  /* Danger button */
+  --btn-danger-bg: rgba(239, 68, 68, 0.15);
+  --btn-danger-text: #fca5a5;
+  --btn-danger-border: rgba(239, 68, 68, 0.3);
+  --btn-danger-hover: rgba(239, 68, 68, 0.25);
 }
 
 @layer base {
+
   /* ---- 全局基础 ---- */
   body {
     background-color: var(--bg-body);

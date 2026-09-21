@@ -196,7 +196,7 @@ export default function SerialController() {
   ) {
     const val = clamp(
       parseInt(e.target.value) ||
-        ParamRange.VOLUME.DEFAULT,
+      ParamRange.VOLUME.DEFAULT,
       ParamRange.VOLUME.MIN,
       ParamRange.VOLUME.MAX,
     );
@@ -208,7 +208,7 @@ export default function SerialController() {
   ) {
     const val = clamp(
       parseInt(e.target.value) ||
-        ParamRange.VOLUME.DEFAULT,
+      ParamRange.VOLUME.DEFAULT,
       ParamRange.VOLUME.MIN,
       ParamRange.VOLUME.MAX,
     );
@@ -593,144 +593,144 @@ export default function SerialController() {
           </section>
         </div>
 
-          {/* ---- 串口通信卡片 ---- */}
-          <aside className="glass-panel rounded-xl p-5 max-sm:p-3">
-            <div className="mb-4 flex items-baseline justify-between gap-x-3">
-              <h2 className="m-0 text-base font-semibold">串口通信</h2>
-              <span className="text-xs text-[var(--text-muted)]">
-                {baudRate === 'custom'
-                  ? `${customBaudRate || '—'} bps`
-                  : `${baudRate} bps`}
-              </span>
-            </div>
+        {/* ---- 串口通信卡片 ---- */}
+        <aside className="glass-panel rounded-xl p-5 max-sm:p-3">
+          <div className="mb-4 flex items-baseline justify-between gap-x-3">
+            <h2 className="m-0 text-base font-semibold">串口通信</h2>
+            <span className="text-xs text-[var(--text-muted)]">
+              {baudRate === 'custom'
+                ? `${customBaudRate || '—'} bps`
+                : `${baudRate} bps`}
+            </span>
+          </div>
 
-            <div className="grid grid-cols-2 gap-2.5">
-              <button
-                className="glass-btn-primary rounded-lg px-4 py-2.5 text-sm"
-                id="connectBtn"
-                disabled={isConnected}
-                onClick={handleConnect}
-              >
-                连接串口
-              </button>
-              <button
-                className="glass-btn-danger rounded-lg px-4 py-2.5 text-sm"
-                id="disconnectBtn"
-                disabled={!isConnected}
-                onClick={handleDisconnect}
-              >
-                断开连接
-              </button>
-            </div>
-
-            {/* 波特率 */}
-            <div className="mt-4 grid gap-2">
-              <label
-                htmlFor="baudRate"
-                className="text-xs text-[var(--text-muted)]"
-              >
-                波特率
-              </label>
-              <div className="flex gap-2">
-                <select
-                  id="baudRate"
-                  value={baudRate}
-                  onChange={handleBaudRateChange}
-                  className="glass-input cursor-pointer rounded-md px-3 py-2 text-sm"
-                >
-                  <option value="9600">9600</option>
-                  <option value="19200">19200</option>
-                  <option value="38400">38400</option>
-                  <option value="57600">57600</option>
-                  <option value="115200">115200</option>
-                  <option value="custom">自定义</option>
-                </select>
-                {baudRate === 'custom' && (
-                  <input
-                    type="number"
-                    id="customBaudRate"
-                    placeholder="1200 - 4000000"
-                    min="1200"
-                    max="4000000"
-                    value={customBaudRate}
-                    aria-label="自定义波特率"
-                    className="glass-input min-w-0 flex-1 rounded-md px-3 py-2 text-sm"
-                    onChange={(e) =>
-                      setCustomBaudRate(e.target.value)
-                    }
-                  />
-                )}
-              </div>
-            </div>
-
-            {/* 显示选项 */}
-            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-              <label
-                htmlFor="hexDisplay"
-                className="flex cursor-pointer items-center gap-2"
-              >
-                <input
-                  type="checkbox"
-                  id="hexDisplay"
-                  checked={hexDisplay}
-                  onChange={(e) =>
-                    setHexDisplay(e.target.checked)
-                  }
-                  className="h-4 w-4 cursor-pointer accent-[var(--btn-primary-bg)]"
-                />
-                十六进制显示
-              </label>
-              <label
-                htmlFor="showRawData"
-                className="flex cursor-pointer items-center gap-2"
-              >
-                <input
-                  type="checkbox"
-                  id="showRawData"
-                  checked={showRawData}
-                  onChange={(e) =>
-                    setShowRawData(e.target.checked)
-                  }
-                  className="h-4 w-4 cursor-pointer accent-[var(--btn-primary-bg)]"
-                />
-                显示原始数据
-              </label>
-            </div>
-
-            <div
-              className="mt-4 flex items-start gap-2 rounded-lg border border-[var(--glass-border)] px-3 py-2 text-sm"
-              id="status"
-              style={
-                { backgroundColor: statusBg } as CSSProperties
-              }
-            >
-              <span
-                className={`status-dot mt-1 shrink-0${isConnected ? ' connected' : ''}`}
-              />
-              <span className="min-w-0 break-words">
-                {statusText}
-              </span>
-            </div>
-
-            <textarea
-              id="receiveArea"
-              ref={receiveRef}
-              readOnly
-              value={receiveLines.join('\n')}
-              placeholder="接收的数据将显示在这里…"
-              aria-label="串口接收区"
-              className="mt-4 h-[240px] w-full resize-none overflow-y-auto break-words rounded-lg border border-[var(--terminal-border)] bg-[var(--terminal-bg)] p-3 font-mono text-xs leading-[1.5] text-[var(--terminal-text)] outline-none max-sm:h-[180px]"
-            />
-
+          <div className="grid grid-cols-2 gap-2.5">
             <button
-              className="glass-btn-secondary mt-3 w-full rounded-lg px-4 py-2.5 text-sm"
-              id="clearReceiveBtn"
-              onClick={clearReceive}
+              className="glass-btn-primary rounded-lg px-4 py-2.5 text-sm"
+              id="connectBtn"
+              disabled={isConnected}
+              onClick={handleConnect}
             >
-              清空接收区
+              连接串口
             </button>
-          </aside>
-        </main>
+            <button
+              className="glass-btn-danger rounded-lg px-4 py-2.5 text-sm"
+              id="disconnectBtn"
+              disabled={!isConnected}
+              onClick={handleDisconnect}
+            >
+              断开连接
+            </button>
+          </div>
+
+          {/* 波特率 */}
+          <div className="mt-4 grid gap-2">
+            <label
+              htmlFor="baudRate"
+              className="text-xs text-[var(--text-muted)]"
+            >
+              波特率
+            </label>
+            <div className="flex gap-2">
+              <select
+                id="baudRate"
+                value={baudRate}
+                onChange={handleBaudRateChange}
+                className="glass-input cursor-pointer rounded-md px-3 py-2 text-sm"
+              >
+                <option value="9600">9600</option>
+                <option value="19200">19200</option>
+                <option value="38400">38400</option>
+                <option value="57600">57600</option>
+                <option value="115200">115200</option>
+                <option value="custom">自定义</option>
+              </select>
+              {baudRate === 'custom' && (
+                <input
+                  type="number"
+                  id="customBaudRate"
+                  placeholder="1200 - 4000000"
+                  min="1200"
+                  max="4000000"
+                  value={customBaudRate}
+                  aria-label="自定义波特率"
+                  className="glass-input min-w-0 flex-1 rounded-md px-3 py-2 text-sm"
+                  onChange={(e) =>
+                    setCustomBaudRate(e.target.value)
+                  }
+                />
+              )}
+            </div>
+          </div>
+
+          {/* 显示选项 */}
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            <label
+              htmlFor="hexDisplay"
+              className="flex cursor-pointer items-center gap-2"
+            >
+              <input
+                type="checkbox"
+                id="hexDisplay"
+                checked={hexDisplay}
+                onChange={(e) =>
+                  setHexDisplay(e.target.checked)
+                }
+                className="h-4 w-4 cursor-pointer accent-[var(--btn-primary-bg)]"
+              />
+              十六进制显示
+            </label>
+            <label
+              htmlFor="showRawData"
+              className="flex cursor-pointer items-center gap-2"
+            >
+              <input
+                type="checkbox"
+                id="showRawData"
+                checked={showRawData}
+                onChange={(e) =>
+                  setShowRawData(e.target.checked)
+                }
+                className="h-4 w-4 cursor-pointer accent-[var(--btn-primary-bg)]"
+              />
+              显示原始数据
+            </label>
+          </div>
+
+          <div
+            className="mt-4 flex items-start gap-2 rounded-lg border border-[var(--glass-border)] px-3 py-2 text-sm"
+            id="status"
+            style={
+              { backgroundColor: statusBg } as CSSProperties
+            }
+          >
+            <span
+              className={`status-dot mt-1 shrink-0${isConnected ? ' connected' : ''}`}
+            />
+            <span className="min-w-0 break-words">
+              {statusText}
+            </span>
+          </div>
+
+          <textarea
+            id="receiveArea"
+            ref={receiveRef}
+            readOnly
+            value={receiveLines.join('\n')}
+            placeholder="接收的数据将显示在这里…"
+            aria-label="串口接收区"
+            className="mt-4 h-[240px] w-full resize-none overflow-y-auto break-words rounded-lg border border-[var(--terminal-border)] bg-[var(--terminal-bg)] p-3 font-mono text-xs leading-[1.5] text-[var(--terminal-text)] outline-none max-sm:h-[180px]"
+          />
+
+          <button
+            className="glass-btn-secondary mt-3 w-full rounded-lg px-4 py-2.5 text-sm"
+            id="clearReceiveBtn"
+            onClick={clearReceive}
+          >
+            清空接收区
+          </button>
+        </aside>
+      </main>
 
       <footer className="border-t border-[var(--footer-border)] bg-[var(--footer-bg)] px-4 py-6 text-center text-xs text-[var(--footer-text)]">
         <p className="m-0">

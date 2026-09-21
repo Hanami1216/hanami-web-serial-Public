@@ -566,11 +566,11 @@ export function useSerial(options: UseSerialOptions) {
     return () => {
       keepReadingRef.current = false;
       if (readerRef.current) {
-        readerRef.current.cancel().catch(() => {});
+        readerRef.current.cancel().catch(() => { });
         readerRef.current = null;
       }
       if (portRef.current) {
-        portRef.current.close().catch(() => {});
+        portRef.current.close().catch(() => { });
         portRef.current = null;
       }
     };
